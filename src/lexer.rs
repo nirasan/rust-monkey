@@ -25,35 +25,46 @@ impl Lexer {
 
     fn token(&mut self) -> Token {
         self.skip_whitespace();
-        let token = if let Some(c) = self.char {
-            if Lexer::is_letter(c) {
-                let ident = self.read_identifier();
-                let reserved = Token::from_str(ident.as_str());
-                if reserved.is_ok() {
-                    reserved.unwrap()
-                } else {
-                    Ident(ident)
-                }
-            } else if Lexer::is_digit(c) {
-                let number = self.read_number();
-                Int(number)
+        if self.char.is_none() {
+            return Eof;
+        }
+        let c = self.char.unwrap();
+        let token = if Lexer::is_letter(c) {
+            let ident = self.read_identifier();
+            let reserved = Token::from_str(ident.as_str());
+            if reserved.is_ok() {
+                reserved.unwrap()
             } else {
-                let token = match c {
-                    '=' => Assign,
-                    ';' => SemiColon,
-                    '(' => LParen,
-                    ')' => RParen,
-                    '{' => LBrace,
-                    '}' => RBrace,
-                    ',' => Comma,
-                    '+' => Plus,
-                    c => Illegal(c.to_string())
-                };
+                Ident(ident)
+            }
+        } else if Lexer::is_digit(c) {
+            let number = self.read_number();
+            Int(number)
+        } else if c == '=' {
+            if self.peek_char().filter(|cc| *cc == '=').is_some() {
                 self.next();
-                token
+                self.next();
+                Eq
+            } else {
+                self.next();
+                Assign
+            }
+        } else if c == '!' {
+            if self.peek_char().filter(|cc| *cc == '=').is_some() {
+                self.next();
+                self.next();
+                NotEq
+            } else {
+                self.next();
+                Bang
             }
         } else {
-            Eof
+            let reserved = Token::from_str(c.to_string().as_str());
+            self.next();
+            match reserved {
+                Ok(token) => token,
+                Err(_) => Illegal(c.to_string())
+            }
         };
         return token;
     }
@@ -92,11 +103,18 @@ impl Lexer {
             self.next();
         }
     }
+
+    fn peek_char(&self) -> Option<char> {
+        self.input.get(self.position + 1).and_then(|c| Some(*c))
+    }
 }
 
 #[test]
 fn test_next_symbol() {
-    let input = r#"=+(){},;"#.to_string();
+    let input = r#"=+(){},;
+-!*/<>
+===!=!!
+"#.to_string();
     let mut lexer = Lexer::new(input);
 
     assert_eq!(lexer.token(), Assign);
@@ -105,8 +123,22 @@ fn test_next_symbol() {
     assert_eq!(lexer.token(), RParen);
     assert_eq!(lexer.token(), LBrace);
     assert_eq!(lexer.token(), RBrace);
+
     assert_eq!(lexer.token(), Comma);
     assert_eq!(lexer.token(), SemiColon);
+    assert_eq!(lexer.token(), Minus);
+    assert_eq!(lexer.token(), Bang);
+    assert_eq!(lexer.token(), Asterisk);
+    assert_eq!(lexer.token(), Slash);
+    assert_eq!(lexer.token(), LT);
+    assert_eq!(lexer.token(), GT);
+
+    assert_eq!(lexer.token(), Eq);
+    assert_eq!(lexer.token(), Assign);
+    assert_eq!(lexer.token(), NotEq);
+    assert_eq!(lexer.token(), Bang);
+    assert_eq!(lexer.token(), Bang);
+
     assert_eq!(lexer.token(), Eof);
 }
 
