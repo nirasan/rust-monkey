@@ -7,19 +7,17 @@ use std::str::FromStr;
 pub struct Lexer {
     input: Vec<char>,
     position: usize,
-    next_position: usize,
-    char: char
+    char: Option<char>
 }
 
 impl Lexer {
     fn new(input: String) -> Lexer {
         let chars = input.chars().collect::<Vec<char>>();
-        let first = chars[0].clone();
+        let first = chars.get(0).and_then(|c| Some(*c));
 
         let lexer = Lexer{
             input: chars,
             position: 0,
-            next_position: 1,
             char: first,
         };
         return lexer;
@@ -27,53 +25,47 @@ impl Lexer {
 
     fn token(&mut self) -> Token {
         self.skip_whitespace();
-        let position = self.position;
-        let token = match self.char {
-            '=' => Assign,
-            ';' => SemiColon,
-            '(' => LParen,
-            ')' => RParen,
-            '{' => LBrace,
-            '}' => RBrace,
-            ',' => Comma,
-            '+' => Plus,
-            '0' => Eof,
-            c => {
-                if Lexer::is_letter(c) {
-                    let ident = self.read_identifier();
-                    let reserved = Token::from_str(ident.as_str());
-                    if reserved.is_ok() {
-                        reserved.unwrap()
-                    } else {
-                        Ident(ident)
-                    }
-                } else if Lexer::is_digit(c) {
-                    let number = self.read_number();
-                    Int(number)
+        let token = if let Some(c) = self.char {
+            if Lexer::is_letter(c) {
+                let ident = self.read_identifier();
+                let reserved = Token::from_str(ident.as_str());
+                if reserved.is_ok() {
+                    reserved.unwrap()
                 } else {
-                    Illegal(c.to_string())
+                    Ident(ident)
                 }
-            },
+            } else if Lexer::is_digit(c) {
+                let number = self.read_number();
+                Int(number)
+            } else {
+                let token = match c {
+                    '=' => Assign,
+                    ';' => SemiColon,
+                    '(' => LParen,
+                    ')' => RParen,
+                    '{' => LBrace,
+                    '}' => RBrace,
+                    ',' => Comma,
+                    '+' => Plus,
+                    c => Illegal(c.to_string())
+                };
+                self.next();
+                token
+            }
+        } else {
+            Eof
         };
-        if self.position == position {
-            self.next();
-        }
         return token;
     }
 
     fn next(&mut self) {
         self.position += 1;
-        self.next_position += 1;
-        if self.position < self.input.len() {
-            self.char = self.input[self.position].clone();
-        } else {
-            self.char = '0';
-        }
+        self.char = self.input.get(self.position).and_then(|c| Some(*c));
     }
 
     fn read_identifier(&mut self) -> String {
         let start = self.position;
-        while Lexer::is_letter(self.char) {
+        while Lexer::is_letter(self.char.unwrap_or_default()) {
             self.next();
         }
         return String::from_iter(&self.input[start .. self.position]);
@@ -81,7 +73,7 @@ impl Lexer {
 
     fn read_number(&mut self) -> String {
         let start = self.position;
-        while Lexer::is_digit(self.char) {
+        while Lexer::is_digit(self.char.unwrap_or_default()) {
             self.next();
         }
         return String::from_iter(&self.input[start .. self.position]);
@@ -96,7 +88,7 @@ impl Lexer {
     }
 
     fn skip_whitespace(&mut self) {
-        while self.char.is_whitespace() {
+        while self.char.unwrap_or_default().is_whitespace() {
             self.next();
         }
     }
