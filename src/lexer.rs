@@ -11,7 +11,7 @@ pub struct Lexer {
 }
 
 impl Lexer {
-    fn new(input: String) -> Lexer {
+    pub fn new(input: String) -> Lexer {
         let chars = input.chars().collect::<Vec<char>>();
         let first = chars.get(0).and_then(|c| Some(*c));
 
@@ -23,7 +23,7 @@ impl Lexer {
         return lexer;
     }
 
-    fn token(&mut self) -> Token {
+    pub fn token(&mut self) -> Token {
         self.skip_whitespace();
         if self.char.is_none() {
             return Eof;
@@ -69,7 +69,7 @@ impl Lexer {
         return token;
     }
 
-    fn next(&mut self) {
+    pub fn next(&mut self) {
         self.position += 1;
         self.char = self.input.get(self.position).and_then(|c| Some(*c));
     }
