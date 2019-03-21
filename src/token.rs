@@ -1,6 +1,7 @@
 use std::str::FromStr;
+use std::fmt;
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Token {
     Illegal(String),
     Eof,
@@ -68,4 +69,45 @@ impl FromStr for Token {
             _ => Err(()),
         }
     }
+}
+
+impl fmt::Display for Token {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Token::Illegal(s) => write!(f, "Illegal({})", s),
+            Token::Ident(s) => write!(f, "\"{}\"", s),
+            Token::Int(s) => write!(f, "{}", s),
+            Token::Eof => write!(f, "EOF"),
+            Token::Assign => write!(f, "="),
+            Token::Plus => write!(f, "+"),
+            Token::Minus => write!(f, "-"),
+            Token::Bang => write!(f, "!"),
+            Token::Asterisk => write!(f, "*"),
+            Token::Slash => write!(f, "/"),
+            Token::LT => write!(f, "<"),
+            Token::GT => write!(f, ">"),
+            Token::Comma => write!(f, ","),
+            Token::SemiColon => write!(f, ";"),
+            Token::LParen => write!(f, "("),
+            Token::RParen => write!(f, ")"),
+            Token::LBrace => write!(f, "{{"),
+            Token::RBrace => write!(f, "}}"),
+            Token::Eq => write!(f, "=="),
+            Token::NotEq => write!(f, "!="),
+            Token::Function => write!(f, "function"),
+            Token::Let => write!(f, "let"),
+            Token::True => write!(f, "true"),
+            Token::False => write!(f, "false"),
+            Token::If => write!(f, "if"),
+            Token::Else => write!(f, "else"),
+            Token::Return => write!(f, "return"),
+        }
+    }
+}
+
+#[test]
+fn test_display() {
+    assert_eq!(Token::Plus.to_string(), "+");
+    assert_eq!(Token::LBrace.to_string(), "{");
+    assert_eq!(Token::Ident("hello".to_string()).to_string(), "\"hello\"");
 }
