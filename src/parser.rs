@@ -9,6 +9,7 @@ struct Parser {
     lexer: Lexer,
     cur_token: Token,
     peek_token: Token,
+    errors: Vec<String>
 }
 
 impl Parser {
@@ -18,7 +19,8 @@ impl Parser {
         Parser{
             lexer,
             cur_token,
-            peek_token
+            peek_token,
+            errors: vec![],
         }
     }
 
@@ -40,8 +42,13 @@ impl Parser {
             self.next_token();
             true
         } else {
+            self.peek_error(token);
             false
         }
+    }
+
+    fn peek_error(&mut self, token: Token) {
+        self.errors.push(format!("expected next token to be {:?}, got {:?} insted", token, self.peek_token))
     }
 
     fn parse_program(&mut self) -> ast::Program {
@@ -103,12 +110,13 @@ fn test_new() {
 
 #[test]
 fn test_let() {
-    let input = r#"let five = 5;"#.to_string();
+    let input = r#"let five  5;"#.to_string();
     let mut lexer = Lexer::new(input);
 
     let mut parser = Parser::new(lexer);
 
     let program = parser.parse_program();
 
-    println!("{:?}", program);
+    println!("PROGRAM: {:?}", program);
+    println!("ERRORS: {:?}", parser.errors);
 }
