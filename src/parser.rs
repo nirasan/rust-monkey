@@ -1,7 +1,7 @@
 use crate::lexer::Lexer;
 use crate::token::Token;
 use crate::ast;
-use crate::ast::LetStatement;
+use crate::ast::{LetStatement, ReturnStatement, DummyExpression};
 
 use std::mem;
 
@@ -70,6 +70,7 @@ impl Parser {
     fn parse_statement(&mut self) -> Option<Box<ast::Statement>> {
         match self.cur_token {
             Token::Let => self.parse_let_statement(),
+            Token::Return => self.parse_return_statement(),
             _ => None
         }
     }
@@ -95,6 +96,20 @@ impl Parser {
             let_token,
             identifier,
             Box::new(ast::DummyExpression{}),
+        )));
+    }
+
+    fn parse_return_statement(&mut self) ->Option<Box<ast::Statement>> {
+        let token = self.cur_token.clone();
+
+        self.next_token();
+
+        while self.cur_token_is(Token::SemiColon) {
+            self.next_token();
+        }
+
+        return Some(Box::new(ReturnStatement::new(
+            token, Box::new(DummyExpression{})
         )));
     }
 }

@@ -1,5 +1,4 @@
 use crate::token::Token;
-use crate::token::Token::*;
 
 pub trait Node: std::fmt::Debug {}
 
@@ -58,6 +57,22 @@ impl Identifier {
 impl Node for Identifier {}
 
 impl Expression for Identifier {}
+
+#[derive(Debug)]
+pub struct ReturnStatement {
+    token: Token,
+    return_value: Box<Expression>
+}
+
+impl ReturnStatement {
+    pub fn new(token: Token, return_value: Box<Expression>) -> ReturnStatement {
+        ReturnStatement{token, return_value}
+    }
+}
+
+impl Node for ReturnStatement {}
+
+impl Statement for ReturnStatement {}
 
 #[derive(Debug)]
 pub struct DummyExpression {}

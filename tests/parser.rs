@@ -7,10 +7,11 @@ use rust_monkey::parser::Parser;
 fn test1() {
     parse("let five = 5;");
     parse("let ten 10;");
+    parse("return 10;");
 }
 
 fn parse(input: &str) {
-    println!("INPUT:\n{}\n", input);
+    println!("=====\nINPUT:\n{}\n", input);
 
     let l = Lexer::new(input.to_string());
     let mut p = Parser::new(l);
