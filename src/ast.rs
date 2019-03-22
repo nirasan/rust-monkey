@@ -9,16 +9,34 @@ pub trait Expression: Node {}
 
 #[derive(Debug)]
 pub struct Program {
-    pub statements: Vec<Box<Statement>>
+    statements: Vec<Box<Statement>>
+}
+
+impl Program {
+    pub fn new() -> Program {
+        Program{
+            statements: vec![]
+        }
+    }
+
+    pub fn push(&mut self, statement: Box<Statement>) {
+        self.statements.push(statement)
+    }
 }
 
 impl Node for Program {}
 
 #[derive(Debug)]
 pub struct LetStatement {
-    pub token: Token,
-    pub name: Identifier,
-    pub value: Box<Expression>
+    token: Token,
+    name: Identifier,
+    value: Box<Expression>
+}
+
+impl LetStatement {
+    pub fn new(token: Token, name: Identifier, value: Box<Expression>) -> LetStatement {
+        LetStatement{ token, name, value }
+    }
 }
 
 impl Node for LetStatement {}
@@ -27,8 +45,14 @@ impl Statement for LetStatement {}
 
 #[derive(Debug)]
 pub struct Identifier {
-    pub token: Token,
-    pub value: String,
+    token: Token,
+    value: String,
+}
+
+impl Identifier {
+    pub fn new(token: Token, value: String) -> Identifier {
+        Identifier{token, value}
+    }
 }
 
 impl Node for Identifier {}

@@ -5,7 +5,7 @@ use crate::ast::LetStatement;
 
 use std::mem;
 
-struct Parser {
+pub struct Parser {
     lexer: Lexer,
     cur_token: Token,
     peek_token: Token,
@@ -13,7 +13,7 @@ struct Parser {
 }
 
 impl Parser {
-    fn new(mut lexer: Lexer) -> Parser {
+    pub fn new(mut lexer: Lexer) -> Parser {
         let cur_token = lexer.token();
         let peek_token = lexer.token();
         Parser{
@@ -22,6 +22,10 @@ impl Parser {
             peek_token,
             errors: vec![],
         }
+    }
+
+    pub fn errors(&self) -> &Vec<String> {
+        &self.errors
     }
 
     fn next_token(&mut self) {
@@ -51,14 +55,12 @@ impl Parser {
         self.errors.push(format!("expected next token to be {:?}, got {:?} insted", token, self.peek_token))
     }
 
-    fn parse_program(&mut self) -> ast::Program {
-        let mut program = ast::Program{
-            statements: vec![]
-        };
+    pub fn parse_program(&mut self) -> ast::Program {
+        let mut program = ast::Program::new();
         while self.cur_token != Token::Eof {
             let statement = self.parse_statement();
             if let Some(statement) = statement {
-                program.statements.push(statement);
+                program.push(statement);
             }
             self.next_token();
         }
@@ -79,7 +81,7 @@ impl Parser {
             return None;
         }
 
-        let identifier = ast::Identifier{token: self.cur_token.clone(), value: self.cur_token.to_string()};
+        let identifier = ast::Identifier::new(self.cur_token.clone(), self.cur_token.to_string());
 
         if !self.expect_peek(Token::Assign) {
             return None;
@@ -89,11 +91,11 @@ impl Parser {
             self.next_token();
         }
 
-        Some(Box::new(LetStatement{
-            token: let_token,
-            name: identifier,
-            value: Box::new(ast::DummyExpression{})
-        }))
+        return Some(Box::new(LetStatement::new(
+            let_token,
+            identifier,
+            Box::new(ast::DummyExpression{}),
+        )));
     }
 }
 
@@ -110,7 +112,7 @@ fn test_new() {
 
 #[test]
 fn test_let() {
-    let input = r#"let five  5;"#.to_string();
+    let input = r#"let five = 5;"#.to_string();
     let mut lexer = Lexer::new(input);
 
     let mut parser = Parser::new(lexer);
