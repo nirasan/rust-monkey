@@ -75,6 +75,22 @@ impl Node for ReturnStatement {}
 impl Statement for ReturnStatement {}
 
 #[derive(Debug)]
+pub struct ExpressionStatement {
+    token: Token,
+    expression: Box<Expression>
+}
+
+impl ExpressionStatement {
+    pub fn new(token: Token, expression: Box<Expression>) -> ExpressionStatement {
+        ExpressionStatement{ token, expression }
+    }
+}
+
+impl Node for ExpressionStatement {}
+
+impl Statement for ExpressionStatement {}
+
+#[derive(Debug)]
 pub struct DummyExpression {}
 
 impl Node for DummyExpression {}
