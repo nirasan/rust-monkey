@@ -8,6 +8,7 @@ fn test1() {
     parse("let five = 5;");
     parse("let ten 10;");
     parse("return 10;");
+    parse("foobar;");
 }
 
 fn parse(input: &str) {

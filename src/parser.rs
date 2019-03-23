@@ -1,15 +1,16 @@
 use crate::lexer::Lexer;
 use crate::token::Token;
 use crate::ast;
-use crate::ast::{LetStatement, ReturnStatement, DummyExpression};
+use crate::ast::{LetStatement, ReturnStatement, DummyExpression, ExpressionStatement};
 
 use std::mem;
+use crate::parser::Precedence::LOWEST;
 
 pub struct Parser {
     lexer: Lexer,
     cur_token: Token,
     peek_token: Token,
-    errors: Vec<String>
+    errors: Vec<String>,
 }
 
 impl Parser {
@@ -58,6 +59,7 @@ impl Parser {
     pub fn parse_program(&mut self) -> ast::Program {
         let mut program = ast::Program::new();
         while self.cur_token != Token::Eof {
+            println!("cur_token is {:?}", self.cur_token);
             let statement = self.parse_statement();
             if let Some(statement) = statement {
                 program.push(statement);
@@ -71,7 +73,7 @@ impl Parser {
         match self.cur_token {
             Token::Let => self.parse_let_statement(),
             Token::Return => self.parse_return_statement(),
-            _ => None
+            _ => self.parse_expression_statement(),
         }
     }
 
@@ -112,6 +114,44 @@ impl Parser {
             token, Box::new(DummyExpression{})
         )));
     }
+
+    fn parse_expression_statement(&mut self) -> Option<Box<ast::Statement>> {
+        let token = self.cur_token.clone();
+
+        let expression = self.parse_expression(LOWEST);
+        let expression = if let Some(e) = expression {
+            e
+        } else {
+            Box::new(ast::DummyExpression{})
+        };
+
+        if self.peek_token_is(Token::SemiColon) {
+            self.next_token();
+        }
+
+        return Some(Box::new(ExpressionStatement::new(token, expression)));
+    }
+
+    fn parse_expression(&mut self, p: Precedence) -> Option<Box<ast::Expression>> {
+        match &self.cur_token {
+            Token::Ident(s) => Some(self.parse_identifier()),
+            _ => None
+        }
+    }
+
+    fn parse_identifier(&mut self) -> Box<ast::Expression> {
+        Box::new(ast::Identifier::new(self.cur_token.clone(), self.cur_token.to_string()))
+    }
+}
+
+enum Precedence {
+    LOWEST,
+    EQUALS,
+    LESSGREATER,
+    SUM,
+    PRODUCT,
+    PREFIX,
+    CALL
 }
 
 #[test]
