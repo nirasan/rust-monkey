@@ -90,7 +90,8 @@ impl Parser {
             return None;
         }
 
-        while self.cur_token_is(Token::SemiColon) {
+        // TODO: skip until semicolon
+        while !self.cur_token_is(Token::SemiColon) {
             self.next_token();
         }
 
@@ -134,13 +135,33 @@ impl Parser {
 
     fn parse_expression(&mut self, p: Precedence) -> Option<Box<ast::Expression>> {
         match &self.cur_token {
-            Token::Ident(s) => Some(self.parse_identifier()),
+            Token::Ident(_) => self.parse_identifier(),
+            Token::Int(_) => self.parse_integer_literal(),
             _ => None
         }
     }
 
-    fn parse_identifier(&mut self) -> Box<ast::Expression> {
-        Box::new(ast::Identifier::new(self.cur_token.clone(), self.cur_token.to_string()))
+    fn parse_identifier(&mut self) -> Option<Box<ast::Expression>> {
+        Some(Box::new(
+            ast::Identifier::new(self.cur_token.clone(), self.cur_token.to_string())
+        ))
+    }
+
+    fn parse_integer_literal(&mut self) -> Option<Box<ast::Expression>> {
+        let token = self.cur_token.clone();
+
+        let value = match &self.cur_token {
+            Token::Int(s) => s.parse::<i64>().ok(),
+            _ => None,
+        };
+
+        if value.is_none() {
+            return None;
+        }
+
+        return Some(Box::new(
+            ast::IntegerLiteral::new(token, value.unwrap())
+        ));
     }
 }
 

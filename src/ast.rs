@@ -91,6 +91,22 @@ impl Node for ExpressionStatement {}
 impl Statement for ExpressionStatement {}
 
 #[derive(Debug)]
+pub struct IntegerLiteral {
+    token: Token,
+    value: i64
+}
+
+impl IntegerLiteral {
+    pub fn new(token: Token, value: i64) -> IntegerLiteral {
+        IntegerLiteral{ token, value }
+    }
+}
+
+impl Node for IntegerLiteral {}
+
+impl Expression for IntegerLiteral {}
+
+#[derive(Debug)]
 pub struct DummyExpression {}
 
 impl Node for DummyExpression {}
