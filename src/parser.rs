@@ -4,7 +4,6 @@ use crate::ast;
 use crate::ast::{LetStatement, ReturnStatement, DummyExpression, ExpressionStatement};
 
 use std::mem;
-use crate::parser::Precedence::LOWEST;
 
 pub struct Parser {
     lexer: Lexer,
@@ -119,7 +118,7 @@ impl Parser {
     fn parse_expression_statement(&mut self) -> Option<Box<ast::Statement>> {
         let token = self.cur_token.clone();
 
-        let expression = self.parse_expression(LOWEST);
+        let expression = self.parse_expression(Precedence::LOWEST);
         let expression = if let Some(e) = expression {
             e
         } else {
@@ -137,7 +136,11 @@ impl Parser {
         match &self.cur_token {
             Token::Ident(_) => self.parse_identifier(),
             Token::Int(_) => self.parse_integer_literal(),
-            _ => None
+            Token::Bang | Token::Minus => self.parse_prefix_expression(),
+            _ => {
+                self.errors.push(format!("no prefix parse function for {:?} found", self.cur_token));
+                None
+            }
         }
     }
 
@@ -162,6 +165,25 @@ impl Parser {
         return Some(Box::new(
             ast::IntegerLiteral::new(token, value.unwrap())
         ));
+    }
+
+    fn parse_prefix_expression(&mut self) -> Option<Box<ast::Expression>> {
+        let token = self.cur_token.clone();
+        let operator = self.cur_token.to_string();
+
+        self.next_token();
+
+        let right = self.parse_expression(Precedence::PREFIX);
+
+        if right.is_none() {
+            return None;
+        }
+
+        return Some(Box::new(ast::PrefixExpression::new(
+            token,
+            operator,
+            right.unwrap()
+        )));
     }
 }
 

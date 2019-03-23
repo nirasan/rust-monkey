@@ -9,6 +9,8 @@ fn test1() {
     parse("let ten 10;");
     parse("return 10;");
     parse("foobar;");
+    parse("!5;");
+    parse("-15;");
 }
 
 fn parse(input: &str) {

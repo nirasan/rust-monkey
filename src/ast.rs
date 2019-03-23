@@ -107,6 +107,24 @@ impl Node for IntegerLiteral {}
 impl Expression for IntegerLiteral {}
 
 #[derive(Debug)]
+pub struct PrefixExpression {
+    token: Token,
+    operator: String,
+    right: Box<Expression>,
+}
+
+impl PrefixExpression {
+    pub fn new(token: Token, operator: String, right: Box<Expression>) -> PrefixExpression {
+        PrefixExpression{ token, operator, right }
+    }
+}
+
+impl Node for PrefixExpression {}
+
+impl Expression for PrefixExpression {}
+
+
+#[derive(Debug)]
 pub struct DummyExpression {}
 
 impl Node for DummyExpression {}
