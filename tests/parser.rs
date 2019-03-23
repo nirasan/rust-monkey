@@ -11,6 +11,10 @@ fn test1() {
     parse("foobar;");
     parse("!5;");
     parse("-15;");
+    parse("5 + 5;");
+    parse("5 - 5;");
+    parse("1 + 2 * 3;");
+    parse("5 > 4 == 3 < 2");
 }
 
 fn parse(input: &str) {

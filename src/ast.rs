@@ -106,6 +106,7 @@ impl Node for IntegerLiteral {}
 
 impl Expression for IntegerLiteral {}
 
+
 #[derive(Debug)]
 pub struct PrefixExpression {
     token: Token,
@@ -122,6 +123,25 @@ impl PrefixExpression {
 impl Node for PrefixExpression {}
 
 impl Expression for PrefixExpression {}
+
+
+#[derive(Debug)]
+pub struct InfixExpression {
+    token: Token,
+    left: Box<Expression>,
+    operator: String,
+    right: Box<Expression>
+}
+
+impl InfixExpression {
+    pub fn new(token: Token, left: Box<Expression>, operator: String, right: Box<Expression>) -> InfixExpression {
+        InfixExpression{ token, left, operator, right }
+    }
+}
+
+impl Node for InfixExpression {}
+
+impl Expression for InfixExpression {}
 
 
 #[derive(Debug)]
