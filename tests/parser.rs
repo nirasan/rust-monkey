@@ -15,6 +15,7 @@ fn test1() {
     parse("5 - 5;");
     parse("1 + 2 * 3;");
     parse("5 > 4 == 3 < 2");
+    parse("true != false");
 }
 
 fn parse(input: &str) {

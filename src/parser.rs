@@ -137,6 +137,7 @@ impl Parser {
             Token::Ident(_) => self.parse_identifier(),
             Token::Int(_) => self.parse_integer_literal(),
             Token::Bang | Token::Minus => self.parse_prefix_expression(),
+            Token::True | Token::False => self.parse_boolean(),
             _ => {
                 self.errors.push(format!("no prefix parse function for {:?} found", self.cur_token));
                 None
@@ -186,6 +187,10 @@ impl Parser {
         return Some(Box::new(
             ast::IntegerLiteral::new(token, value.unwrap())
         ));
+    }
+
+    fn parse_boolean(&mut self) -> Option<Box<ast::Expression>> {
+        Some(Box::new(ast::Boolean::new(self.cur_token.clone(), self.cur_token_is(Token::True))))
     }
 
     fn parse_prefix_expression(&mut self) -> Option<Box<ast::Expression>> {

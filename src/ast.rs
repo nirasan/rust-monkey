@@ -145,6 +145,23 @@ impl Expression for InfixExpression {}
 
 
 #[derive(Debug)]
+pub struct Boolean {
+    token: Token,
+    value: bool
+}
+
+impl Boolean {
+    pub fn new(token: Token, value: bool) -> Boolean {
+        Boolean{ token, value }
+    }
+}
+
+impl Node for Boolean {}
+
+impl Expression for Boolean {}
+
+
+#[derive(Debug)]
 pub struct DummyExpression {}
 
 impl Node for DummyExpression {}
