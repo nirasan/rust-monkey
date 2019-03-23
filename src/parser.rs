@@ -138,6 +138,7 @@ impl Parser {
             Token::Int(_) => self.parse_integer_literal(),
             Token::Bang | Token::Minus => self.parse_prefix_expression(),
             Token::True | Token::False => self.parse_boolean(),
+            Token::LParen => self.parse_grouped_expression(),
             _ => {
                 self.errors.push(format!("no prefix parse function for {:?} found", self.cur_token));
                 None
@@ -230,6 +231,18 @@ impl Parser {
             operator,
             right.unwrap()
         )));
+    }
+
+    fn parse_grouped_expression(&mut self) -> Option<Box<ast::Expression>> {
+        self.next_token();
+
+        let exp = self.parse_expression(Precedence::LOWEST);
+
+        if !self.expect_peek(Token::RParen) {
+            return None;
+        }
+
+        return exp;
     }
 
     fn peek_precedence(&self) -> Precedence {
