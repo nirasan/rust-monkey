@@ -198,6 +198,24 @@ impl Expression for IfExpression {}
 
 
 #[derive(Debug)]
+pub struct FunctionLiteral {
+    token: Token,
+    parameters: Vec<Box<Identifier>>,
+    body: Box<BlockStatement>,
+}
+
+impl FunctionLiteral {
+    pub fn new(token: Token, parameters: Vec<Box<Identifier>>, body: Box<BlockStatement>) -> FunctionLiteral {
+        FunctionLiteral{ token, parameters, body }
+    }
+}
+
+impl Node for FunctionLiteral {}
+
+impl Expression for FunctionLiteral {}
+
+
+#[derive(Debug)]
 pub struct DummyExpression {}
 
 impl Node for DummyExpression {}

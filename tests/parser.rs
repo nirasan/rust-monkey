@@ -19,6 +19,7 @@ fn test1() {
     parse("(1 + 2) * 3;");
     parse("if (1 < 2) { x }");
     parse("if (1 < 2) { true } else { false }");
+    parse("fn(x, y) { x + y; }");
 }
 
 fn parse(input: &str) {

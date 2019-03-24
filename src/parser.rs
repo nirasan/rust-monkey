@@ -140,6 +140,7 @@ impl Parser {
             Token::True | Token::False => self.parse_boolean(),
             Token::LParen => self.parse_grouped_expression(),
             Token::If => self.parse_if_expression(),
+            Token::Function => self.parse_function_literal(),
             _ => {
                 self.errors.push(format!("no prefix parse function for {:?} found", self.cur_token));
                 None
@@ -309,6 +310,61 @@ impl Parser {
         return Some(Box::new(ast::BlockStatement::new(
             token, statements
         )));
+    }
+
+    fn parse_function_literal(&mut self) -> Option<Box<ast::Expression>> {
+        let token = self.cur_token.clone();
+
+        if !self.expect_peek(Token::LParen) {
+            return None;
+        }
+
+        let parameters = self.parse_function_parameters();
+
+        if parameters.is_none() {
+            return None;
+        }
+        let parameters = parameters.unwrap();
+
+        if !self.expect_peek(Token::LBrace) {
+            return None;
+        }
+
+        let body = self.parse_block_statement();
+
+        if body.is_none() {
+            return None;
+        }
+        let body = body.unwrap();
+
+        return Some(Box::new(ast::FunctionLiteral::new(
+            token, parameters, body
+        )));
+    }
+
+    fn parse_function_parameters(&mut self) -> Option<Vec<Box<ast::Identifier>>> {
+        let mut identifiers = vec![];
+
+        if self.peek_token_is(Token::RParen) {
+            self.next_token();
+            return Some(identifiers);
+        };
+
+        self.next_token();
+
+        identifiers.push(Box::new(ast::Identifier::new(self.cur_token.clone(), self.cur_token.to_string())));
+
+        while self.peek_token_is(Token::Comma) {
+            self.next_token();
+            self.next_token();
+            identifiers.push(Box::new(ast::Identifier::new(self.cur_token.clone(), self.cur_token.to_string())));
+        }
+
+        if !self.expect_peek(Token::RParen) {
+            return None;
+        }
+
+        return Some(identifiers);
     }
 
     fn peek_precedence(&self) -> Precedence {
