@@ -162,6 +162,42 @@ impl Expression for Boolean {}
 
 
 #[derive(Debug)]
+pub struct BlockStatement {
+    token: Token,
+    statements: Vec<Box<Statement>>
+}
+
+impl BlockStatement {
+    pub fn new(token: Token, statements: Vec<Box<Statement>>) -> BlockStatement {
+        BlockStatement{ token, statements }
+    }
+}
+
+impl Node for BlockStatement {}
+
+impl Statement for BlockStatement {}
+
+
+#[derive(Debug)]
+pub struct IfExpression {
+    token: Token,
+    condition: Box<Expression>,
+    consequence: Box<BlockStatement>,
+    alternative: Option<Box<BlockStatement>>,
+}
+
+impl IfExpression {
+    pub fn new(token: Token, condition: Box<Expression>, consequence: Box<BlockStatement>, alternative: Option<Box<BlockStatement>>) -> IfExpression {
+        IfExpression{ token, condition, consequence, alternative }
+    }
+}
+
+impl Node for IfExpression {}
+
+impl Expression for IfExpression {}
+
+
+#[derive(Debug)]
 pub struct DummyExpression {}
 
 impl Node for DummyExpression {}

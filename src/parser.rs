@@ -139,6 +139,7 @@ impl Parser {
             Token::Bang | Token::Minus => self.parse_prefix_expression(),
             Token::True | Token::False => self.parse_boolean(),
             Token::LParen => self.parse_grouped_expression(),
+            Token::If => self.parse_if_expression(),
             _ => {
                 self.errors.push(format!("no prefix parse function for {:?} found", self.cur_token));
                 None
@@ -243,6 +244,71 @@ impl Parser {
         }
 
         return exp;
+    }
+
+    fn parse_if_expression(&mut self) -> Option<Box<ast::Expression>> {
+        let token = self.cur_token.clone();
+
+        if !self.expect_peek(Token::LParen) {
+            return None
+        }
+
+        self.next_token();
+        let condition = self.parse_expression(Precedence::LOWEST);
+
+        if condition.is_none() {
+            return None
+        }
+        let condition = condition.unwrap();
+
+        if !self.expect_peek(Token::RParen) {
+            return None
+        }
+
+        if !self.expect_peek(Token::LBrace) {
+            return None
+        }
+
+        let consequence = self.parse_block_statement();
+
+        if consequence.is_none() {
+            return None
+        }
+        let consequence = consequence.unwrap();
+
+        let mut alternative = None;
+        if self.peek_token_is(Token::Else) {
+            self.next_token();
+
+            if !self.expect_peek(Token::LBrace) {
+                return None
+            }
+
+            alternative = self.parse_block_statement();
+        }
+
+        return Some(Box::new(ast::IfExpression::new(
+            token, condition, consequence, alternative
+        )));
+    }
+
+    fn parse_block_statement(&mut self) -> Option<Box<ast::BlockStatement>> {
+        let token = self.cur_token.clone();
+        let mut statements = vec![];
+
+        self.next_token();
+
+        while !self.cur_token_is(Token::RBrace) && !self.cur_token_is(Token::Eof) {
+            let statement = self.parse_statement();
+            if let Some(s) = statement {
+                statements.push(s);
+            }
+            self.next_token();
+        }
+
+        return Some(Box::new(ast::BlockStatement::new(
+            token, statements
+        )));
     }
 
     fn peek_precedence(&self) -> Precedence {

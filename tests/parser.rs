@@ -17,6 +17,8 @@ fn test1() {
     parse("5 > 4 == 3 < 2");
     parse("true != false");
     parse("(1 + 2) * 3;");
+    parse("if (1 < 2) { x }");
+    parse("if (1 < 2) { true } else { false }");
 }
 
 fn parse(input: &str) {
