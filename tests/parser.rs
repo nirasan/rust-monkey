@@ -20,6 +20,8 @@ fn test1() {
     parse("if (1 < 2) { x }");
     parse("if (1 < 2) { true } else { false }");
     parse("fn(x, y) { x + y; }");
+    parse("fn(x, y) { x + y; }(5, 6)");
+    parse("add(5, 6)");
 }
 
 fn parse(input: &str) {

@@ -153,7 +153,7 @@ impl Parser {
 
         while !self.peek_token_is(Token::SemiColon) && precedence < self.peek_precedence() {
             let ok = match &self.peek_token {
-                Token::Plus | Token::Minus | Token::Slash | Token::Asterisk | Token::Eq | Token::NotEq | Token ::LT | Token::GT => true,
+                Token::Plus | Token::Minus | Token::Slash | Token::Asterisk | Token::Eq | Token::NotEq | Token ::LT | Token::GT | Token::LParen => true,
                 _ => false
             };
 
@@ -163,7 +163,11 @@ impl Parser {
 
             self.next_token();
 
-            left = self.parse_infix_expression(left.unwrap());
+            if self.cur_token_is(Token::LParen) {
+                left = self.parse_call_expression(left.unwrap());
+            } else {
+                left = self.parse_infix_expression(left.unwrap());
+            }
         }
 
         return left;
@@ -367,6 +371,49 @@ impl Parser {
         return Some(identifiers);
     }
 
+    fn parse_call_expression(&mut self, function: Box<ast::Expression>) -> Option<Box<Expression>> {
+        let token = self.cur_token.clone();
+        let arguments = self.parse_call_arguments();
+        if arguments.is_none() {
+            return None
+        }
+        return Some(Box::new(ast::CallExpression::new(
+            token, function, arguments.unwrap()
+        )));
+    }
+
+    fn parse_call_arguments(&mut self) -> Option<Vec<Box<ast::Expression>>> {
+        let mut arguments = vec![];
+
+        if self.peek_token_is(Token::RParen) {
+            self.next_token();
+            return Some(arguments);
+        }
+
+        self.next_token();
+        let expression = self.parse_expression(Precedence::LOWEST);
+        if expression.is_none() {
+            return None;
+        }
+        arguments.push(expression.unwrap());
+
+        while self.peek_token_is(Token::Comma) {
+            self.next_token();
+            self.next_token();
+            let expression = self.parse_expression(Precedence::LOWEST);
+            if expression.is_none() {
+                return None;
+            }
+            arguments.push(expression.unwrap());
+        }
+
+        if !self.expect_peek(Token::RParen) {
+            return None;
+        }
+
+        return Some(arguments);
+    }
+
     fn peek_precedence(&self) -> Precedence {
         self.precedence(&self.peek_token)
     }
@@ -385,6 +432,7 @@ impl Parser {
             Token::Minus => Precedence::SUM,
             Token::Slash => Precedence::PRODUCT,
             Token::Asterisk => Precedence::PRODUCT,
+            Token::LParen => Precedence::CALL,
             _ => Precedence::LOWEST
         }
     }

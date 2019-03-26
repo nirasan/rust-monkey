@@ -216,6 +216,24 @@ impl Expression for FunctionLiteral {}
 
 
 #[derive(Debug)]
+pub struct CallExpression {
+    token: Token,
+    function: Box<Expression>,
+    arguments: Vec<Box<Expression>>,
+}
+
+impl CallExpression {
+    pub fn new(token: Token, function: Box<Expression>, arguments: Vec<Box<Expression>>) -> CallExpression {
+        CallExpression{ token, function, arguments }
+    }
+}
+
+impl Node for CallExpression {}
+
+impl Expression for CallExpression {}
+
+
+#[derive(Debug)]
 pub struct DummyExpression {}
 
 impl Node for DummyExpression {}
