@@ -233,19 +233,12 @@ impl Node for CallExpression {}
 impl Expression for CallExpression {}
 
 
-#[derive(Debug)]
-pub struct DummyExpression {}
-
-impl Node for DummyExpression {}
-
-impl Expression for DummyExpression {}
-
 #[test]
 fn test_new() {
     let l = LetStatement{
-        token: Eq,
-        name: Identifier{token: Eq, value: "five".to_string()},
-        value: Box::new(Identifier{token: Eq, value: "ten".to_string()})
+        token: Token::Eq,
+        name: Identifier{token: Token::Eq, value: "five".to_string()},
+        value: Box::new(Identifier{token: Token::Eq, value: "ten".to_string()})
     };
     println!("{:?}", l);
     let p = Program{statements: vec![Box::new(l)]};

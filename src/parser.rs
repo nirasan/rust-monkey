@@ -1,7 +1,7 @@
 use crate::lexer::Lexer;
 use crate::token::Token;
 use crate::ast;
-use crate::ast::{LetStatement, ReturnStatement, DummyExpression, ExpressionStatement, Expression};
+use crate::ast::{LetStatement, ReturnStatement, ExpressionStatement, Expression};
 
 use std::mem;
 
@@ -89,15 +89,22 @@ impl Parser {
             return None;
         }
 
-        // TODO: skip until semicolon
-        while !self.cur_token_is(Token::SemiColon) {
-            self.next_token();
+        self.next_token();
+
+        let expression = self.parse_expression(Precedence::LOWEST);
+        if expression.is_none() {
+            return None;
+        }
+        let expression = expression.unwrap();
+
+        if !self.expect_peek(Token::SemiColon) {
+            return None;
         }
 
         return Some(Box::new(LetStatement::new(
             let_token,
             identifier,
-            Box::new(ast::DummyExpression{}),
+            expression
         )));
     }
 
@@ -106,12 +113,18 @@ impl Parser {
 
         self.next_token();
 
-        while self.cur_token_is(Token::SemiColon) {
-            self.next_token();
+        let expression = self.parse_expression(Precedence::LOWEST);
+        if expression.is_none() {
+            return None;
+        }
+        let expression = expression.unwrap();
+
+        if !self.expect_peek(Token::SemiColon) {
+            return None;
         }
 
         return Some(Box::new(ReturnStatement::new(
-            token, Box::new(DummyExpression{})
+            token, expression
         )));
     }
 
@@ -119,11 +132,11 @@ impl Parser {
         let token = self.cur_token.clone();
 
         let expression = self.parse_expression(Precedence::LOWEST);
-        let expression = if let Some(e) = expression {
-            e
-        } else {
-            Box::new(ast::DummyExpression{})
-        };
+
+        if expression.is_none() {
+            return None;
+        }
+        let expression = expression.unwrap();
 
         if self.peek_token_is(Token::SemiColon) {
             self.next_token();
