@@ -1,7 +1,7 @@
 use std::str::FromStr;
 use std::fmt;
 
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Eq, Hash)]
 pub enum Token {
     Illegal(String),
     Eof,
@@ -102,6 +102,13 @@ impl fmt::Display for Token {
             Token::Else => write!(f, "else"),
             Token::Return => write!(f, "return"),
         }
+    }
+}
+
+impl Token {
+    pub fn is_same(&self, other: &Token) -> bool {
+        use std::mem;
+        mem::discriminant(self) == mem::discriminant(other)
     }
 }
 

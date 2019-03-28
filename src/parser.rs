@@ -3,24 +3,54 @@ use crate::token::Token;
 use crate::ast;
 
 use std::mem;
+use std::collections::HashMap;
+
+type PrefixParseFn = fn(&mut Parser) -> Option<Box<ast::Node>>;
+type InfixParseFn = fn(&mut Parser, Box<ast::Node>) -> Option<Box<ast::Node>>;
 
 pub struct Parser {
     lexer: Lexer,
     cur_token: Token,
     peek_token: Token,
     errors: Vec<String>,
+    prefix_parse_fns: HashMap<Token, PrefixParseFn>,
+    infix_parse_fns: HashMap<Token, InfixParseFn>,
 }
 
 impl Parser {
     pub fn new(mut lexer: Lexer) -> Parser {
         let cur_token = lexer.token();
         let peek_token = lexer.token();
-        Parser{
+        let mut parser = Parser{
             lexer,
             cur_token,
             peek_token,
             errors: vec![],
-        }
+            prefix_parse_fns: HashMap::new(),
+            infix_parse_fns: HashMap::new(),
+        };
+
+        parser.register_prefix_parse_fn(Token::Ident(String::new()), Parser::parse_identifier);
+        parser.register_prefix_parse_fn(Token::Int(String::new()), Parser::parse_integer_literal);
+        parser.register_prefix_parse_fn(Token::Bang, Parser::parse_prefix_expression);
+        parser.register_prefix_parse_fn(Token::Minus, Parser::parse_prefix_expression);
+        parser.register_prefix_parse_fn(Token::True, Parser::parse_boolean);
+        parser.register_prefix_parse_fn(Token::False, Parser::parse_boolean);
+        parser.register_prefix_parse_fn(Token::LParen, Parser::parse_grouped_expression);
+        parser.register_prefix_parse_fn(Token::If, Parser::parse_if_expression);
+        parser.register_prefix_parse_fn(Token::Function, Parser::parse_if_expression);
+
+        parser.register_infix_parse_fn(Token::Plus, Parser::parse_infix_expression);
+        parser.register_infix_parse_fn(Token::Minus, Parser::parse_infix_expression);
+        parser.register_infix_parse_fn(Token::Slash, Parser::parse_infix_expression);
+        parser.register_infix_parse_fn(Token::Asterisk, Parser::parse_infix_expression);
+        parser.register_infix_parse_fn(Token::Eq, Parser::parse_infix_expression);
+        parser.register_infix_parse_fn(Token::NotEq, Parser::parse_infix_expression);
+        parser.register_infix_parse_fn(Token::LT, Parser::parse_infix_expression);
+        parser.register_infix_parse_fn(Token::GT, Parser::parse_infix_expression);
+        parser.register_infix_parse_fn(Token::LParen, Parser::parse_call_expression);
+
+        return parser;
     }
 
     pub fn errors(&self) -> &Vec<String> {
@@ -67,7 +97,7 @@ impl Parser {
         return ast::Node::new_program(statements);
     }
 
-    fn parse_statement(&mut self) -> Option<Box<ast::Node>> {
+    pub(self) fn parse_statement(&mut self) -> Option<Box<ast::Node>> {
         let statement = match self.cur_token {
             Token::Let => self.parse_let_statement(),
             Token::Return => self.parse_return_statement(),
@@ -76,7 +106,7 @@ impl Parser {
         return statement.and_then(|s| ast::Node::new_statement(s));
     }
 
-    fn parse_let_statement(&mut self) -> Option<Box<ast::Node>> {
+    pub(self) fn parse_let_statement(&mut self) -> Option<Box<ast::Node>> {
         let let_token = self.cur_token.clone();
 
         if !self.expect_peek(Token::Ident(String::new())) {
@@ -108,7 +138,7 @@ impl Parser {
         );
     }
 
-    fn parse_return_statement(&mut self) ->Option<Box<ast::Node>> {
+    pub(self) fn parse_return_statement(&mut self) ->Option<Box<ast::Node>> {
         let token = self.cur_token.clone();
 
         self.next_token();
@@ -126,7 +156,7 @@ impl Parser {
         return ast::Node::new_return_statement(token, expression);
     }
 
-    fn parse_expression_statement(&mut self) -> Option<Box<ast::Node>> {
+    pub(self) fn parse_expression_statement(&mut self) -> Option<Box<ast::Node>> {
         let token = self.cur_token.clone();
 
         let expression = self.parse_expression(Precedence::LOWEST);
@@ -143,61 +173,36 @@ impl Parser {
         return ast::Node::new_expression_statement(token, expression);
     }
 
-    fn parse_expression(&mut self, precedence: Precedence) -> Option<Box<ast::Node>> {
-        let mut left = match &self.cur_token {
-            Token::Ident(_) => self.parse_identifier(),
-            Token::Int(_) => self.parse_integer_literal(),
-            Token::Bang | Token::Minus => self.parse_prefix_expression(),
-            Token::True | Token::False => self.parse_boolean(),
-            Token::LParen => self.parse_grouped_expression(),
-            Token::If => self.parse_if_expression(),
-            Token::Function => self.parse_function_literal(),
-            _ => {
-                self.errors.push(format!("no prefix parse function for {:?} found", self.cur_token));
-                None
-            }
-        };
+    pub(self) fn parse_expression(&mut self, precedence: Precedence) -> Option<Box<ast::Node>> {
+        let prefix_parse_fn = self.get_prefix_parse_fn(self.cur_token.clone())?;
 
-        if left.is_none() {
-            return None;
-        }
-        left = left.and_then(|e| ast::Node::new_expression(e));
+        let mut left = prefix_parse_fn(self)?;
+        left = ast::Node::new_expression(left)?;
 
         while !self.peek_token_is(Token::SemiColon) && precedence < self.peek_precedence() {
-            let ok = match &self.peek_token {
-                Token::Plus | Token::Minus | Token::Slash | Token::Asterisk | Token::Eq | Token::NotEq | Token ::LT | Token::GT | Token::LParen => true,
-                _ => false
-            };
+            let infix_parse_fn = self.get_infix_parse_fn(self.peek_token.clone());
 
-            if !ok {
-                return left;
+            if infix_parse_fn.is_none() {
+                return Some(left);
             }
+            let infix_parse_fn = infix_parse_fn.unwrap();
 
             self.next_token();
 
-            if self.cur_token_is(Token::LParen) {
-                left = self.parse_call_expression(left.unwrap());
-            } else {
-                eprintln!("left is {:?}, cur_token is {:?}", left, self.cur_token);
-                left = self.parse_infix_expression(left.unwrap());
-            }
-
-            if left.is_none() {
-                return None;
-            }
-            left = left.and_then(|e| ast::Node::new_expression(e));
+            left = infix_parse_fn(self, left)?;
+            left = ast::Node::new_expression(left)?;
         }
 
-        return left;
+        return Some(left);
     }
 
-    fn parse_identifier(&mut self) -> Option<Box<ast::Node>> {
+    pub(self) fn parse_identifier(&mut self) -> Option<Box<ast::Node>> {
         Some(
             ast::Node::new_identifier(self.cur_token.clone(), self.cur_token.to_string())
         )
     }
 
-    fn parse_integer_literal(&mut self) -> Option<Box<ast::Node>> {
+    pub(self) fn parse_integer_literal(&mut self) -> Option<Box<ast::Node>> {
         let token = self.cur_token.clone();
 
         let value = match &self.cur_token {
@@ -214,11 +219,11 @@ impl Parser {
         );
     }
 
-    fn parse_boolean(&mut self) -> Option<Box<ast::Node>> {
+    pub(self) fn parse_boolean(&mut self) -> Option<Box<ast::Node>> {
         Some(ast::Node::new_boolean(self.cur_token.clone(), self.cur_token_is(Token::True)))
     }
 
-    fn parse_prefix_expression(&mut self) -> Option<Box<ast::Node>> {
+    pub(self) fn parse_prefix_expression(&mut self) -> Option<Box<ast::Node>> {
         let token = self.cur_token.clone();
         let operator = self.cur_token.to_string();
 
@@ -237,7 +242,7 @@ impl Parser {
         );
     }
 
-    fn parse_infix_expression(&mut self, left: Box<ast::Node>) -> Option<Box<ast::Node>> {
+    pub(self) fn parse_infix_expression(&mut self, left: Box<ast::Node>) -> Option<Box<ast::Node>> {
         let token = self.cur_token.clone();
         let operator = self.cur_token.to_string();
 
@@ -257,7 +262,7 @@ impl Parser {
         );
     }
 
-    fn parse_grouped_expression(&mut self) -> Option<Box<ast::Node>> {
+    pub(self) fn parse_grouped_expression(&mut self) -> Option<Box<ast::Node>> {
         self.next_token();
 
         let exp = self.parse_expression(Precedence::LOWEST);
@@ -271,7 +276,7 @@ impl Parser {
         return exp;
     }
 
-    fn parse_if_expression(&mut self) -> Option<Box<ast::Node>> {
+    pub(self) fn parse_if_expression(&mut self) -> Option<Box<ast::Node>> {
         let token = self.cur_token.clone();
 
         if !self.expect_peek(Token::LParen) {
@@ -317,7 +322,7 @@ impl Parser {
         );
     }
 
-    fn parse_block_statement(&mut self) -> Option<Box<ast::Node>> {
+    pub(self) fn parse_block_statement(&mut self) -> Option<Box<ast::Node>> {
         let token = self.cur_token.clone();
         let mut statements = vec![];
 
@@ -336,7 +341,7 @@ impl Parser {
         );
     }
 
-    fn parse_function_literal(&mut self) -> Option<Box<ast::Node>> {
+    pub(self) fn parse_function_literal(&mut self) -> Option<Box<ast::Node>> {
         let token = self.cur_token.clone();
 
         if !self.expect_peek(Token::LParen) {
@@ -366,7 +371,7 @@ impl Parser {
         );
     }
 
-    fn parse_function_parameters(&mut self) -> Option<Vec<Box<ast::Node>>> {
+    pub(self) fn parse_function_parameters(&mut self) -> Option<Vec<Box<ast::Node>>> {
         let mut identifiers = vec![];
 
         if self.peek_token_is(Token::RParen) {
@@ -391,7 +396,7 @@ impl Parser {
         return Some(identifiers);
     }
 
-    fn parse_call_expression(&mut self, function: Box<ast::Node>) -> Option<Box<ast::Node>> {
+    pub(self) fn parse_call_expression(&mut self, function: Box<ast::Node>) -> Option<Box<ast::Node>> {
         let token = self.cur_token.clone();
         let arguments = self.parse_call_arguments();
         if arguments.is_none() {
@@ -402,7 +407,7 @@ impl Parser {
         );
     }
 
-    fn parse_call_arguments(&mut self) -> Option<Vec<Box<ast::Node>>> {
+    pub(self) fn parse_call_arguments(&mut self) -> Option<Vec<Box<ast::Node>>> {
         let mut arguments = vec![];
 
         if self.peek_token_is(Token::RParen) {
@@ -457,6 +462,32 @@ impl Parser {
             Token::LParen => Precedence::CALL,
             _ => Precedence::LOWEST
         }
+    }
+
+    fn register_prefix_parse_fn(&mut self, token: Token, f: PrefixParseFn) {
+        self.prefix_parse_fns.insert(token, f);
+    }
+
+    fn register_infix_parse_fn(&mut self, token: Token, f: InfixParseFn) {
+        self.infix_parse_fns.insert(token, f);
+    }
+
+    fn get_prefix_parse_fn(&mut self, token: Token) -> Option<PrefixParseFn> {
+        for (k, v) in self.prefix_parse_fns.iter() {
+            if token.is_same(k) {
+                return Some(*v);
+            }
+        }
+        return None;
+    }
+
+    fn get_infix_parse_fn(&mut self, token: Token) -> Option<InfixParseFn> {
+        for (k, v) in self.infix_parse_fns.iter() {
+            if token.is_same(k) {
+                return Some(*v);
+            }
+        }
+        return None;
     }
 }
 
