@@ -38,7 +38,7 @@ impl Parser {
         parser.register_prefix_parse_fn(Token::False, Parser::parse_boolean);
         parser.register_prefix_parse_fn(Token::LParen, Parser::parse_grouped_expression);
         parser.register_prefix_parse_fn(Token::If, Parser::parse_if_expression);
-        parser.register_prefix_parse_fn(Token::Function, Parser::parse_if_expression);
+        parser.register_prefix_parse_fn(Token::Function, Parser::parse_function_literal);
 
         parser.register_infix_parse_fn(Token::Plus, Parser::parse_infix_expression);
         parser.register_infix_parse_fn(Token::Minus, Parser::parse_infix_expression);
