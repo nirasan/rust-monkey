@@ -8,7 +8,11 @@ pub enum Object {
     Bool(bool),
     ReturnValue(Box<Object>),
     Error(String),
-    Function { parameters: Vec<Box<Node>>, body: Box<Node>, environment: Environment },
+    Function {
+        parameters: Vec<Box<Node>>,
+        body: Box<Node>,
+        environment: Environment,
+    },
 }
 
 impl Object {

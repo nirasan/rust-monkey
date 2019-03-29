@@ -1,9 +1,9 @@
+use crate::ast;
 use crate::lexer::Lexer;
 use crate::token::Token;
-use crate::ast;
 
-use std::mem;
 use std::collections::HashMap;
+use std::mem;
 
 type PrefixParseFn = fn(&mut Parser) -> Option<Box<ast::Node>>;
 type InfixParseFn = fn(&mut Parser, Box<ast::Node>) -> Option<Box<ast::Node>>;
@@ -21,7 +21,7 @@ impl Parser {
     pub fn new(mut lexer: Lexer) -> Parser {
         let cur_token = lexer.token();
         let peek_token = lexer.token();
-        let mut parser = Parser{
+        let mut parser = Parser {
             lexer,
             cur_token,
             peek_token,
@@ -81,7 +81,10 @@ impl Parser {
     }
 
     fn peek_error(&mut self, token: Token) {
-        self.errors.push(format!("expected next token to be {:?}, got {:?} insted", token, self.peek_token))
+        self.errors.push(format!(
+            "expected next token to be {:?}, got {:?} insted",
+            token, self.peek_token
+        ))
     }
 
     pub fn parse_program(&mut self) -> Option<Box<ast::Node>> {
@@ -113,7 +116,8 @@ impl Parser {
             return None;
         }
 
-        let identifier = ast::Node::new_identifier(self.cur_token.clone(), self.cur_token.to_string());
+        let identifier =
+            ast::Node::new_identifier(self.cur_token.clone(), self.cur_token.to_string());
 
         if !self.expect_peek(Token::Assign) {
             return None;
@@ -131,14 +135,10 @@ impl Parser {
             return None;
         }
 
-        return ast::Node::new_let_statement(
-            let_token,
-            identifier,
-            expression
-        );
+        return ast::Node::new_let_statement(let_token, identifier, expression);
     }
 
-    pub(self) fn parse_return_statement(&mut self) ->Option<Box<ast::Node>> {
+    pub(self) fn parse_return_statement(&mut self) -> Option<Box<ast::Node>> {
         let token = self.cur_token.clone();
 
         self.next_token();
@@ -197,9 +197,10 @@ impl Parser {
     }
 
     pub(self) fn parse_identifier(&mut self) -> Option<Box<ast::Node>> {
-        Some(
-            ast::Node::new_identifier(self.cur_token.clone(), self.cur_token.to_string())
-        )
+        Some(ast::Node::new_identifier(
+            self.cur_token.clone(),
+            self.cur_token.to_string(),
+        ))
     }
 
     pub(self) fn parse_integer_literal(&mut self) -> Option<Box<ast::Node>> {
@@ -214,13 +215,14 @@ impl Parser {
             return None;
         }
 
-        return Some(
-            ast::Node::new_integer_literal(token, value.unwrap())
-        );
+        return Some(ast::Node::new_integer_literal(token, value.unwrap()));
     }
 
     pub(self) fn parse_boolean(&mut self) -> Option<Box<ast::Node>> {
-        Some(ast::Node::new_boolean(self.cur_token.clone(), self.cur_token_is(Token::True)))
+        Some(ast::Node::new_boolean(
+            self.cur_token.clone(),
+            self.cur_token_is(Token::True),
+        ))
     }
 
     pub(self) fn parse_prefix_expression(&mut self) -> Option<Box<ast::Node>> {
@@ -235,11 +237,7 @@ impl Parser {
             return None;
         }
 
-        return ast::Node::new_prefix_expression(
-            token,
-            operator,
-            right.unwrap()
-        );
+        return ast::Node::new_prefix_expression(token, operator, right.unwrap());
     }
 
     pub(self) fn parse_infix_expression(&mut self, left: Box<ast::Node>) -> Option<Box<ast::Node>> {
@@ -254,12 +252,7 @@ impl Parser {
             return None;
         }
 
-        return ast::Node::new_infix_expression(
-            token,
-            left,
-            operator,
-            right.unwrap()
-        );
+        return ast::Node::new_infix_expression(token, left, operator, right.unwrap());
     }
 
     pub(self) fn parse_grouped_expression(&mut self) -> Option<Box<ast::Node>> {
@@ -280,29 +273,29 @@ impl Parser {
         let token = self.cur_token.clone();
 
         if !self.expect_peek(Token::LParen) {
-            return None
+            return None;
         }
 
         self.next_token();
         let condition = self.parse_expression(Precedence::LOWEST);
 
         if condition.is_none() {
-            return None
+            return None;
         }
         let condition = condition.unwrap();
 
         if !self.expect_peek(Token::RParen) {
-            return None
+            return None;
         }
 
         if !self.expect_peek(Token::LBrace) {
-            return None
+            return None;
         }
 
         let consequence = self.parse_block_statement();
 
         if consequence.is_none() {
-            return None
+            return None;
         }
         let consequence = consequence.unwrap();
 
@@ -311,15 +304,13 @@ impl Parser {
             self.next_token();
 
             if !self.expect_peek(Token::LBrace) {
-                return None
+                return None;
             }
 
             alternative = self.parse_block_statement();
         }
 
-        return ast::Node::new_if_expression(
-            token, condition, consequence, alternative
-        );
+        return ast::Node::new_if_expression(token, condition, consequence, alternative);
     }
 
     pub(self) fn parse_block_statement(&mut self) -> Option<Box<ast::Node>> {
@@ -336,9 +327,7 @@ impl Parser {
             self.next_token();
         }
 
-        return ast::Node::new_block_statement(
-            token, statements
-        );
+        return ast::Node::new_block_statement(token, statements);
     }
 
     pub(self) fn parse_function_literal(&mut self) -> Option<Box<ast::Node>> {
@@ -366,9 +355,7 @@ impl Parser {
         }
         let body = body.unwrap();
 
-        return ast::Node::new_function_literal(
-            token, parameters, body
-        );
+        return ast::Node::new_function_literal(token, parameters, body);
     }
 
     pub(self) fn parse_function_parameters(&mut self) -> Option<Vec<Box<ast::Node>>> {
@@ -381,12 +368,18 @@ impl Parser {
 
         self.next_token();
 
-        identifiers.push(ast::Node::new_identifier(self.cur_token.clone(), self.cur_token.to_string()));
+        identifiers.push(ast::Node::new_identifier(
+            self.cur_token.clone(),
+            self.cur_token.to_string(),
+        ));
 
         while self.peek_token_is(Token::Comma) {
             self.next_token();
             self.next_token();
-            identifiers.push(ast::Node::new_identifier(self.cur_token.clone(), self.cur_token.to_string()));
+            identifiers.push(ast::Node::new_identifier(
+                self.cur_token.clone(),
+                self.cur_token.to_string(),
+            ));
         }
 
         if !self.expect_peek(Token::RParen) {
@@ -396,15 +389,16 @@ impl Parser {
         return Some(identifiers);
     }
 
-    pub(self) fn parse_call_expression(&mut self, function: Box<ast::Node>) -> Option<Box<ast::Node>> {
+    pub(self) fn parse_call_expression(
+        &mut self,
+        function: Box<ast::Node>,
+    ) -> Option<Box<ast::Node>> {
         let token = self.cur_token.clone();
         let arguments = self.parse_call_arguments();
         if arguments.is_none() {
-            return None
+            return None;
         }
-        return ast::Node::new_call_expression(
-            token, function, arguments.unwrap()
-        );
+        return ast::Node::new_call_expression(token, function, arguments.unwrap());
     }
 
     pub(self) fn parse_call_arguments(&mut self) -> Option<Vec<Box<ast::Node>>> {
@@ -460,7 +454,7 @@ impl Parser {
             Token::Slash => Precedence::PRODUCT,
             Token::Asterisk => Precedence::PRODUCT,
             Token::LParen => Precedence::CALL,
-            _ => Precedence::LOWEST
+            _ => Precedence::LOWEST,
         }
     }
 
@@ -499,7 +493,7 @@ enum Precedence {
     SUM,
     PRODUCT,
     PREFIX,
-    CALL
+    CALL,
 }
 
 #[test]

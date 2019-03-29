@@ -7,7 +7,7 @@ use std::str::FromStr;
 pub struct Lexer {
     input: Vec<char>,
     position: usize,
-    char: Option<char>
+    char: Option<char>,
 }
 
 impl Lexer {
@@ -15,7 +15,7 @@ impl Lexer {
         let chars = input.chars().collect::<Vec<char>>();
         let first = chars.get(0).and_then(|c| Some(*c));
 
-        let lexer = Lexer{
+        let lexer = Lexer {
             input: chars,
             position: 0,
             char: first,
@@ -63,7 +63,7 @@ impl Lexer {
             self.next();
             match reserved {
                 Ok(token) => token,
-                Err(_) => Illegal(c.to_string())
+                Err(_) => Illegal(c.to_string()),
             }
         };
         return token;
@@ -79,7 +79,7 @@ impl Lexer {
         while Lexer::is_letter(self.char.unwrap_or_default()) {
             self.next();
         }
-        return String::from_iter(&self.input[start .. self.position]);
+        return String::from_iter(&self.input[start..self.position]);
     }
 
     fn read_number(&mut self) -> String {
@@ -87,7 +87,7 @@ impl Lexer {
         while Lexer::is_digit(self.char.unwrap_or_default()) {
             self.next();
         }
-        return String::from_iter(&self.input[start .. self.position]);
+        return String::from_iter(&self.input[start..self.position]);
     }
 
     fn is_letter(c: char) -> bool {
@@ -114,7 +114,8 @@ fn test_next_symbol() {
     let input = r#"=+(){},;
 -!*/<>
 ===!=!!
-"#.to_string();
+"#
+    .to_string();
     let mut lexer = Lexer::new(input);
 
     assert_eq!(lexer.token(), Assign);
@@ -162,7 +163,8 @@ fn test_next_function() {
 };
 
 let result = add(five, ten);
-"#.to_string();
+"#
+    .to_string();
     let mut lexer = Lexer::new(input);
 
     assert_eq!(lexer.token(), Let);

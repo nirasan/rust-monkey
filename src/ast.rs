@@ -3,26 +3,76 @@ use core::borrow::Borrow;
 
 #[derive(Debug, Clone)]
 pub enum Node {
-    Statement{ node: Box<Node> },
-    Expression{ node: Box<Node> },
+    Statement {
+        node: Box<Node>,
+    },
+    Expression {
+        node: Box<Node>,
+    },
 
-    Program{ statements: Vec<Box<Node>> },
+    Program {
+        statements: Vec<Box<Node>>,
+    },
 
     // Statement
-    LetStatement{ token: Token, name: Box<Node>, value: Box<Node> }, // name is Identifier, value is Expression
-    ReturnStatement{ token: Token, return_value: Box<Node> },
-    ExpressionStatement{ token: Token, expression: Box<Node> },
-    BlockStatement{ token: Token, statements: Vec<Box<Node>> },
+    LetStatement {
+        token: Token,
+        name: Box<Node>,
+        value: Box<Node>,
+    }, // name is Identifier, value is Expression
+    ReturnStatement {
+        token: Token,
+        return_value: Box<Node>,
+    },
+    ExpressionStatement {
+        token: Token,
+        expression: Box<Node>,
+    },
+    BlockStatement {
+        token: Token,
+        statements: Vec<Box<Node>>,
+    },
 
     // Expression
-    Identifier{ token: Token, value: String },
-    IntegerLiteral{ token: Token, value: i64 },
-    PrefixExpression{ token: Token, operator: String, right: Box<Node> },
-    InfixExpression{ token: Token, left: Box<Node>, operator: String, right: Box<Node> },
-    Boolean{ token: Token, value: bool },
-    IfExpression{ token: Token, condition: Box<Node>, consequence: Box<Node>, alternative: Option<Box<Node>> },
-    FunctionLiteral{ token: Token, parameters: Vec<Box<Node>>, body: Box<Node> },
-    CallExpression{ token: Token, function: Box<Node>, arguments: Vec<Box<Node>> },
+    Identifier {
+        token: Token,
+        value: String,
+    },
+    IntegerLiteral {
+        token: Token,
+        value: i64,
+    },
+    PrefixExpression {
+        token: Token,
+        operator: String,
+        right: Box<Node>,
+    },
+    InfixExpression {
+        token: Token,
+        left: Box<Node>,
+        operator: String,
+        right: Box<Node>,
+    },
+    Boolean {
+        token: Token,
+        value: bool,
+    },
+    IfExpression {
+        token: Token,
+        condition: Box<Node>,
+        consequence: Box<Node>,
+        alternative: Option<Box<Node>>,
+    },
+    FunctionLiteral {
+        token: Token,
+        parameters: Vec<Box<Node>>,
+        body: Box<Node>,
+    },
+    CallExpression {
+        token: Token,
+        function: Box<Node>,
+        arguments: Vec<Box<Node>>,
+    },
 }
 
 impl Node {
@@ -31,13 +81,26 @@ impl Node {
             return Some(node);
         }
         let node = match node.borrow() {
-            &Node::LetStatement {token: _, name: _, value: _} => Some(node),
-            &Node::ReturnStatement {token: _, return_value: _} => Some(node),
-            &Node::ExpressionStatement {token: _, expression: _} => Some(node),
-            &Node::BlockStatement {token: _, statements: _} => Some(node),
+            &Node::LetStatement {
+                token: _,
+                name: _,
+                value: _,
+            } => Some(node),
+            &Node::ReturnStatement {
+                token: _,
+                return_value: _,
+            } => Some(node),
+            &Node::ExpressionStatement {
+                token: _,
+                expression: _,
+            } => Some(node),
+            &Node::BlockStatement {
+                token: _,
+                statements: _,
+            } => Some(node),
             _ => None,
         };
-        return node.and_then(|node| Some(Box::new(Node::Statement {node})));
+        return node.and_then(|node| Some(Box::new(Node::Statement { node })));
     }
 
     pub fn new_expression(node: Box<Node>) -> Option<Box<Node>> {
@@ -46,19 +109,41 @@ impl Node {
             return Some(node);
         }
         let node = match node.borrow() {
-            &Node::Identifier {token: _, value: _} => Some(node),
-            &Node::IntegerLiteral {token: _, value: _} => Some(node),
-            &Node::PrefixExpression {token: _, operator: _, right: _} => Some(node),
-            &Node::InfixExpression {token: _, left: _, operator: _, right: _} => Some(node),
-            &Node::Boolean {token: _, value: _} => Some(node),
-            &Node::IfExpression {token: _, condition: _, consequence: _, alternative: _} => Some(node),
-            &Node::FunctionLiteral {token: _, parameters: _, body: _} => Some(node),
-            &Node::CallExpression {token: _, function: _, arguments: _} => Some(node),
-            &Node::Expression {node: _} => Some(node),
+            &Node::Identifier { token: _, value: _ } => Some(node),
+            &Node::IntegerLiteral { token: _, value: _ } => Some(node),
+            &Node::PrefixExpression {
+                token: _,
+                operator: _,
+                right: _,
+            } => Some(node),
+            &Node::InfixExpression {
+                token: _,
+                left: _,
+                operator: _,
+                right: _,
+            } => Some(node),
+            &Node::Boolean { token: _, value: _ } => Some(node),
+            &Node::IfExpression {
+                token: _,
+                condition: _,
+                consequence: _,
+                alternative: _,
+            } => Some(node),
+            &Node::FunctionLiteral {
+                token: _,
+                parameters: _,
+                body: _,
+            } => Some(node),
+            &Node::CallExpression {
+                token: _,
+                function: _,
+                arguments: _,
+            } => Some(node),
+            &Node::Expression { node: _ } => Some(node),
             _ => None,
         };
         eprintln!("[new_expression 2] node is {:?}", node);
-        return node.and_then(|node| Some(Box::new(Node::Expression {node})));
+        return node.and_then(|node| Some(Box::new(Node::Expression { node })));
     }
 
     pub fn new_program(statements: Vec<Box<Node>>) -> Option<Box<Node>> {
@@ -68,7 +153,7 @@ impl Node {
             }
         }
 
-        return Some(Box::new(Node::Program{ statements }));
+        return Some(Box::new(Node::Program { statements }));
     }
 
     pub fn new_let_statement(token: Token, name: Box<Node>, value: Box<Node>) -> Option<Box<Node>> {
@@ -80,7 +165,7 @@ impl Node {
             return None;
         }
 
-        return Some(Box::new(Node::LetStatement {token, name, value}));
+        return Some(Box::new(Node::LetStatement { token, name, value }));
     }
 
     pub fn new_return_statement(token: Token, return_value: Box<Node>) -> Option<Box<Node>> {
@@ -88,7 +173,10 @@ impl Node {
             return None;
         }
 
-        return Some(Box::new(Node::ReturnStatement {token, return_value}));
+        return Some(Box::new(Node::ReturnStatement {
+            token,
+            return_value,
+        }));
     }
 
     pub fn new_expression_statement(token: Token, expression: Box<Node>) -> Option<Box<Node>> {
@@ -97,7 +185,7 @@ impl Node {
             return None;
         }
 
-        return Some(Box::new(Node::ExpressionStatement {token, expression}));
+        return Some(Box::new(Node::ExpressionStatement { token, expression }));
     }
 
     pub fn new_block_statement(token: Token, statements: Vec<Box<Node>>) -> Option<Box<Node>> {
@@ -107,26 +195,39 @@ impl Node {
             }
         }
 
-        return Some(Box::new(Node::BlockStatement {token, statements}));
+        return Some(Box::new(Node::BlockStatement { token, statements }));
     }
 
     pub fn new_identifier(token: Token, value: String) -> Box<Node> {
-        Box::new(Node::Identifier {token, value})
+        Box::new(Node::Identifier { token, value })
     }
 
     pub fn new_integer_literal(token: Token, value: i64) -> Box<Node> {
-        Box::new(Node::IntegerLiteral {token, value})
+        Box::new(Node::IntegerLiteral { token, value })
     }
 
-    pub fn new_prefix_expression(token: Token, operator: String, right: Box<Node>) -> Option<Box<Node>> {
+    pub fn new_prefix_expression(
+        token: Token,
+        operator: String,
+        right: Box<Node>,
+    ) -> Option<Box<Node>> {
         if !Node::is_expression(right.borrow()) {
             return None;
         }
 
-        Some(Box::new(Node::PrefixExpression {token, operator, right}))
+        Some(Box::new(Node::PrefixExpression {
+            token,
+            operator,
+            right,
+        }))
     }
 
-    pub fn new_infix_expression(token: Token, left: Box<Node>, operator: String, right: Box<Node>) -> Option<Box<Node>> {
+    pub fn new_infix_expression(
+        token: Token,
+        left: Box<Node>,
+        operator: String,
+        right: Box<Node>,
+    ) -> Option<Box<Node>> {
         if !Node::is_expression(left.borrow()) {
             eprintln!("left is not expression. {:?}", left);
             return None;
@@ -137,14 +238,24 @@ impl Node {
             return None;
         }
 
-        Some(Box::new(Node::InfixExpression {token, left, operator, right}))
+        Some(Box::new(Node::InfixExpression {
+            token,
+            left,
+            operator,
+            right,
+        }))
     }
 
     pub fn new_boolean(token: Token, value: bool) -> Box<Node> {
-        Box::new(Node::Boolean {token, value})
+        Box::new(Node::Boolean { token, value })
     }
 
-    pub fn new_if_expression(token: Token, condition: Box<Node>, consequence: Box<Node>, alternative: Option<Box<Node>>) -> Option<Box<Node>> {
+    pub fn new_if_expression(
+        token: Token,
+        condition: Box<Node>,
+        consequence: Box<Node>,
+        alternative: Option<Box<Node>>,
+    ) -> Option<Box<Node>> {
         if !Node::is_expression(condition.borrow()) {
             return None;
         }
@@ -153,14 +264,25 @@ impl Node {
             return None;
         }
 
-        if alternative.is_some() && !Node::is_block_statement(alternative.as_ref().unwrap().borrow()) {
+        if alternative.is_some()
+            && !Node::is_block_statement(alternative.as_ref().unwrap().borrow())
+        {
             return None;
         }
 
-        Some(Box::new(Node::IfExpression {token, condition, consequence, alternative}))
+        Some(Box::new(Node::IfExpression {
+            token,
+            condition,
+            consequence,
+            alternative,
+        }))
     }
 
-    pub fn new_function_literal(token: Token, parameters: Vec<Box<Node>>, body: Box<Node>) -> Option<Box<Node>> {
+    pub fn new_function_literal(
+        token: Token,
+        parameters: Vec<Box<Node>>,
+        body: Box<Node>,
+    ) -> Option<Box<Node>> {
         for p in parameters.iter() {
             if !Node::is_identifier(p.borrow()) {
                 return None;
@@ -171,10 +293,18 @@ impl Node {
             return None;
         }
 
-        Some(Box::new(Node::FunctionLiteral {token, parameters, body}))
+        Some(Box::new(Node::FunctionLiteral {
+            token,
+            parameters,
+            body,
+        }))
     }
 
-    pub fn new_call_expression(token: Token, function: Box<Node>, arguments: Vec<Box<Node>>) -> Option<Box<Node>> {
+    pub fn new_call_expression(
+        token: Token,
+        function: Box<Node>,
+        arguments: Vec<Box<Node>>,
+    ) -> Option<Box<Node>> {
         if !Node::is_expression(function.borrow()) {
             return None;
         }
@@ -185,34 +315,41 @@ impl Node {
             }
         }
 
-        Some(Box::new(Node::CallExpression {token, function, arguments}))
+        Some(Box::new(Node::CallExpression {
+            token,
+            function,
+            arguments,
+        }))
     }
 
     fn is_statement(node: &Node) -> bool {
         match node {
-            &Node::Statement {node: _} => true,
-            _ => false
+            &Node::Statement { node: _ } => true,
+            _ => false,
         }
     }
 
     fn is_expression(node: &Node) -> bool {
         match node {
-            &Node::Expression {node: _} => true,
-            _ => false
+            &Node::Expression { node: _ } => true,
+            _ => false,
         }
     }
 
     fn is_identifier(node: &Node) -> bool {
         match node {
-            &Node::Identifier {token: _, value: _} => true,
-            _ => false
+            &Node::Identifier { token: _, value: _ } => true,
+            _ => false,
         }
     }
 
     fn is_block_statement(node: &Node) -> bool {
         match node {
-            &Node::BlockStatement {token: _, statements: _} => true,
-            _ => false
+            &Node::BlockStatement {
+                token: _,
+                statements: _,
+            } => true,
+            _ => false,
         }
     }
 }

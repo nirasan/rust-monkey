@@ -1,6 +1,6 @@
-use std::io::{self, Write};
 use crate::lexer::Lexer;
 use crate::parser::Parser;
+use std::io::{self, Write};
 
 pub fn start() {
     loop {
@@ -8,7 +8,10 @@ pub fn start() {
         io::stdout().flush().unwrap();
 
         let mut code = String::new();
-        io::stdin().read_line(&mut code).ok().expect("failed to read line");
+        io::stdin()
+            .read_line(&mut code)
+            .ok()
+            .expect("failed to read line");
 
         if code == "exit" {
             break;
