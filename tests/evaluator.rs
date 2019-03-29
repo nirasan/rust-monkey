@@ -10,6 +10,12 @@ fn test_evaluator() {
     assert_eq!(evaluate("5"), Some(Object::Integer(5)));
     assert_eq!(evaluate("true"), Some(Object::Bool(true)));
     assert_eq!(evaluate("false"), Some(Object::Bool(false)));
+    assert_eq!(evaluate("!true"), Some(Object::Bool(false)));
+    assert_eq!(evaluate("!false"), Some(Object::Bool(true)));
+    assert_eq!(evaluate("!5"), Some(Object::Bool(false)));
+    assert_eq!(evaluate("!!true"), Some(Object::Bool(true)));
+    assert_eq!(evaluate("!!false"), Some(Object::Bool(false)));
+    assert_eq!(evaluate("-5"), Some(Object::Integer(-5)));
 }
 
 fn evaluate(input: &str) -> Option<Object> {
