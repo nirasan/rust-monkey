@@ -29,6 +29,8 @@ fn eval_program(nodes: &Vec<Box<Node>>) -> Option<Object> {
         let r = eval(node)?;
         if let Object::ReturnValue(v) = r {
             return Some(*v);
+        } else if let Object::Error(_) = r {
+            return Some(r);
         }
         result = Some(r);
     }
@@ -42,7 +44,7 @@ fn eval_block_statements(nodes: &Vec<Box<Node>>) -> Option<Object> {
     for node in nodes.iter() {
         let r = eval(node)?;
 
-        if r.is_same(&Object::ReturnValue(Box::new(Object::Null))) {
+        if r.is_same(&Object::ReturnValue(Box::new(Object::Null))) || r.is_same(&Object::Error(String::new())) {
             return Some(r);
         }
 
@@ -58,10 +60,13 @@ fn native_bool_to_bool_object(b: bool) -> Object {
 
 fn eval_prefix_expression(operator: &str, right: &Box<Node>) -> Option<Object> {
     let right = eval(right)?;
+    if right.is_error() {
+        return Some(right);
+    }
     match operator {
         "!" => Some(eval_bang_operator_expression(right)),
         "-" => Some(eval_minus_prefix_operator_expression(right)),
-        _ => Some(Object::Null)
+        _ => Some(Object::Error(format!("unknown operator: {}, {:?}", operator, right)))
     }
 }
 
@@ -77,13 +82,20 @@ fn eval_minus_prefix_operator_expression(right: Object) -> Object {
     if let Object::Integer(i) = right {
         Object::Integer(-i)
     } else {
-        Object::Null
+        Object::Error(format!("unknown object: {:?}", right))
     }
 }
 
 fn eval_infix_expression(left: &Box<Node>, operator: &str, right: &Box<Node>) -> Option<Object> {
     let left = eval(left)?;
+    if left.is_error() {
+        return Some(left);
+    }
+
     let right = eval(right)?;
+    if right.is_error() {
+        return Some(right);
+    }
 
     if left.is_integer() && right.is_integer() {
         if let Object::Integer(n) = left {
@@ -93,15 +105,19 @@ fn eval_infix_expression(left: &Box<Node>, operator: &str, right: &Box<Node>) ->
         }
     }
 
+    if !left.is_same(&right) {
+        return Some(Object::Error(format!("type mismatch: {:?}, {:?}, {:?}", left, operator, right)));
+    }
+
     Some(match operator {
         "==" => native_bool_to_bool_object(left == right),
         "!=" => native_bool_to_bool_object(left != right),
-        _ => Object::Null
+        _ => Object::Error(format!("unknown operator: {:?}, {:?}, {:?}", left, operator, right))
     })
 }
 
-fn eval_integer_infix_expression(op: &str, left: i64, right: i64) -> Object {
-    match op {
+fn eval_integer_infix_expression(operator: &str, left: i64, right: i64) -> Object {
+    match operator {
         "+" => Object::Integer(left + right),
         "-" => Object::Integer(left - right),
         "*" => Object::Integer(left * right),
@@ -110,12 +126,16 @@ fn eval_integer_infix_expression(op: &str, left: i64, right: i64) -> Object {
         ">" => native_bool_to_bool_object(left > right),
         "==" => native_bool_to_bool_object(left == right),
         "!=" => native_bool_to_bool_object(left != right),
-        _ => Object::Null
+        _ => Object::Error(format!("unknown operator: {:?}, {:?}, {:?}", left, operator, right))
     }
 }
 
 fn eval_if_expression(condition: &Box<Node>, consequence: &Box<Node>, alternative: &Option<Box<Node>>) -> Option<Object> {
     let condition = eval(condition)?;
+    if condition.is_error() {
+        return Some(condition);
+    }
+
     if is_truthy(condition) {
         return eval(consequence);
     } else if alternative.is_some() {
@@ -137,5 +157,8 @@ fn is_truthy(object: Object) -> bool {
 
 fn eval_return_statement(return_value: &Box<Node>) -> Option<Object> {
     let val = eval(return_value)?;
+    if val.is_error() {
+        return Some(val);
+    }
     return Some(Object::ReturnValue(Box::new(val)));
 }

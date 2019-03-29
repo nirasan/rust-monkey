@@ -37,6 +37,8 @@ fn test_evaluator() {
     assert_eq!(evaluate("return 10;"), Some(Object::Integer(10)));
     assert_eq!(evaluate("return 10; 9"), Some(Object::Integer(10)));
     assert_eq!(evaluate("if (true) { if (true) { return 10; } return 1; }"), Some(Object::Integer(10)));
+    assert_eq!(evaluate("1 + true"), Some(Object::Error("type mismatch: Integer(1), \"+\", Bool(true)".to_string())));
+    assert_eq!(evaluate("if (10 > 1) { false + true; }"), Some(Object::Error("unknown operator: Bool(false), \"+\", Bool(true)".to_string())));
 }
 
 fn evaluate(input: &str) -> Option<Object> {

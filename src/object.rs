@@ -4,6 +4,7 @@ pub enum Object {
     Integer(i64),
     Bool(bool),
     ReturnValue(Box<Object>),
+    Error(String),
 }
 
 impl Object {
@@ -14,6 +15,10 @@ impl Object {
 
     pub fn is_integer(&self) -> bool {
         self.is_same(&INTEGER)
+    }
+
+    pub fn is_error(&self) -> bool {
+        self.is_same(&Object::Error(String::new()))
     }
 }
 
