@@ -1,32 +1,35 @@
 use crate::ast::Node;
 use crate::object;
 use crate::object::Object;
+use crate::environment::Environment;
 use core::borrow::Borrow;
 
-pub fn eval(node: &Box<Node>) -> Option<Object> {
+pub fn eval(node: &Box<Node>, env: &mut Environment) -> Option<Object> {
     let n = node.borrow();
     println!("NODE: {:?}", n);
     match n {
-        Node::Program {statements: statements} => eval_program(statements),
-        Node::Statement {node: node} => eval(node),
-        Node::Expression {node: node} => eval(node),
-        Node::ExpressionStatement {token: _, expression: expression} => eval(expression),
+        Node::Program {statements: statements} => eval_program(statements, env),
+        Node::Statement {node: node} => eval(node, env),
+        Node::Expression {node: node} => eval(node, env),
+        Node::ExpressionStatement {token: _, expression: expression} => eval(expression, env),
         Node::IntegerLiteral {token: _, value: value} => Some(Object::Integer(*value)),
         Node::Boolean {token: _, value: value} => Some(native_bool_to_bool_object(*value)),
-        Node::PrefixExpression { token: _, operator: operator, right: right} => eval_prefix_expression(operator, right),
-        Node::InfixExpression { token: _, left: left, operator: operator, right: right} => eval_infix_expression(left, operator, right),
-        Node::BlockStatement {token: _, statements: statements} => eval_block_statements(statements),
-        Node::IfExpression { token: _, condition: condition, consequence: consequence, alternative: alternative} => eval_if_expression(condition, consequence, alternative),
-        Node::ReturnStatement { token: _, return_value: return_value } => eval_return_statement(return_value),
+        Node::PrefixExpression { token: _, operator: operator, right: right} => eval_prefix_expression(operator, right, env),
+        Node::InfixExpression { token: _, left: left, operator: operator, right: right} => eval_infix_expression(left, operator, right, env),
+        Node::BlockStatement {token: _, statements: statements} => eval_block_statements(statements, env),
+        Node::IfExpression { token: _, condition: condition, consequence: consequence, alternative: alternative} => eval_if_expression(condition, consequence, alternative, env),
+        Node::ReturnStatement { token: _, return_value: return_value } => eval_return_statement(return_value, env),
+        Node::LetStatement { token: _, name: name, value: value } => eval_let_statement(name, value, env),
+        Node::Identifier { token: _, value: value} => eval_identifier(value, env),
         _ => None
     }
 }
 
-fn eval_program(nodes: &Vec<Box<Node>>) -> Option<Object> {
+fn eval_program(nodes: &Vec<Box<Node>>, env: &mut Environment) -> Option<Object> {
     let mut result = None;
 
     for node in nodes.iter() {
-        let r = eval(node)?;
+        let r = eval(node, env)?;
         if let Object::ReturnValue(v) = r {
             return Some(*v);
         } else if let Object::Error(_) = r {
@@ -38,11 +41,11 @@ fn eval_program(nodes: &Vec<Box<Node>>) -> Option<Object> {
     return result;
 }
 
-fn eval_block_statements(nodes: &Vec<Box<Node>>) -> Option<Object> {
+fn eval_block_statements(nodes: &Vec<Box<Node>>, env: &mut Environment) -> Option<Object> {
     let mut result = None;
 
     for node in nodes.iter() {
-        let r = eval(node)?;
+        let r = eval(node, env)?;
 
         if r.is_same(&Object::ReturnValue(Box::new(Object::Null))) || r.is_same(&Object::Error(String::new())) {
             return Some(r);
@@ -58,8 +61,8 @@ fn native_bool_to_bool_object(b: bool) -> Object {
     if b { object::TRUE } else { object::FALSE }
 }
 
-fn eval_prefix_expression(operator: &str, right: &Box<Node>) -> Option<Object> {
-    let right = eval(right)?;
+fn eval_prefix_expression(operator: &str, right: &Box<Node>, env: &mut Environment) -> Option<Object> {
+    let right = eval(right, env)?;
     if right.is_error() {
         return Some(right);
     }
@@ -86,13 +89,13 @@ fn eval_minus_prefix_operator_expression(right: Object) -> Object {
     }
 }
 
-fn eval_infix_expression(left: &Box<Node>, operator: &str, right: &Box<Node>) -> Option<Object> {
-    let left = eval(left)?;
+fn eval_infix_expression(left: &Box<Node>, operator: &str, right: &Box<Node>, env: &mut Environment) -> Option<Object> {
+    let left = eval(left, env)?;
     if left.is_error() {
         return Some(left);
     }
 
-    let right = eval(right)?;
+    let right = eval(right, env)?;
     if right.is_error() {
         return Some(right);
     }
@@ -130,17 +133,17 @@ fn eval_integer_infix_expression(operator: &str, left: i64, right: i64) -> Objec
     }
 }
 
-fn eval_if_expression(condition: &Box<Node>, consequence: &Box<Node>, alternative: &Option<Box<Node>>) -> Option<Object> {
-    let condition = eval(condition)?;
+fn eval_if_expression(condition: &Box<Node>, consequence: &Box<Node>, alternative: &Option<Box<Node>>, env: &mut Environment) -> Option<Object> {
+    let condition = eval(condition, env)?;
     if condition.is_error() {
         return Some(condition);
     }
 
     if is_truthy(condition) {
-        return eval(consequence);
+        return eval(consequence, env);
     } else if alternative.is_some() {
         let alternative = alternative.as_ref().unwrap();
-        return eval(alternative);
+        return eval(alternative, env);
     } else {
         return Some(Object::Null);
     }
@@ -155,10 +158,30 @@ fn is_truthy(object: Object) -> bool {
     }
 }
 
-fn eval_return_statement(return_value: &Box<Node>) -> Option<Object> {
-    let val = eval(return_value)?;
+fn eval_return_statement(return_value: &Box<Node>, env: &mut Environment) -> Option<Object> {
+    let val = eval(return_value, env)?;
     if val.is_error() {
         return Some(val);
     }
     return Some(Object::ReturnValue(Box::new(val)));
+}
+
+fn eval_let_statement(name: &Box<Node>, value: &Box<Node>, env: &mut Environment) -> Option<Object> {
+    let val = eval(value, env)?;
+    if val.is_error() {
+        return Some(val);
+    }
+
+    match name.borrow() {
+        Node::Identifier { token:_, value: v } => env.set(v.to_owned(), val),
+        _ => Some(Object::Error(format!("invalid identifier: {:?}", name)))
+    }
+}
+
+fn eval_identifier(value: &String, env: &mut Environment) -> Option<Object> {
+    let object = env.get(value);
+    if object.is_none() {
+        return Some(Object::Error(format!("identifier not found: {:?}", value)));
+    }
+    return object;
 }

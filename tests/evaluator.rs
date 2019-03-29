@@ -4,6 +4,7 @@ use rust_monkey::lexer::Lexer;
 use rust_monkey::parser::Parser;
 use rust_monkey::object::Object;
 use rust_monkey::evaluator::eval;
+use rust_monkey::environment::Environment;
 
 #[test]
 fn test_evaluator() {
@@ -39,6 +40,9 @@ fn test_evaluator() {
     assert_eq!(evaluate("if (true) { if (true) { return 10; } return 1; }"), Some(Object::Integer(10)));
     assert_eq!(evaluate("1 + true"), Some(Object::Error("type mismatch: Integer(1), \"+\", Bool(true)".to_string())));
     assert_eq!(evaluate("if (10 > 1) { false + true; }"), Some(Object::Error("unknown operator: Bool(false), \"+\", Bool(true)".to_string())));
+    assert_eq!(evaluate("let a = 5; a;"), Some(Object::Integer(5)));
+    assert_eq!(evaluate("let a = 5 * 5; a;"), Some(Object::Integer(25)));
+    assert_eq!(evaluate("let a = 5; let b = 6; a + b;"), Some(Object::Integer(11)));
 }
 
 fn evaluate(input: &str) -> Option<Object> {
@@ -51,7 +55,8 @@ fn evaluate(input: &str) -> Option<Object> {
     }
     let program = program.expect("failed to parse program");
     println!("PROGRAM: {:?}", program);
-    let object = eval(&program);
+    let mut env = Environment::new();
+    let object = eval(&program, &mut env);
     println!("OBJECT: {:?}", object);
     return object;
 }
