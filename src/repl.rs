@@ -1,7 +1,6 @@
 use std::io::{self, Write};
 use crate::lexer::Lexer;
 use crate::parser::Parser;
-use crate::token::Token::Eof;
 
 pub fn start() {
     loop {

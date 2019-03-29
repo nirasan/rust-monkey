@@ -4,7 +4,7 @@ use rust_monkey::lexer::Lexer;
 use rust_monkey::parser::Parser;
 
 #[test]
-fn test1() {
+fn test_parser() {
     parse("let five = 5;");
     parse("let ten 10;");
     parse("return 10;");
