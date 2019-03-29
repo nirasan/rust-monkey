@@ -1,12 +1,14 @@
 use crate::ast::Node;
 use crate::environment::Environment;
 
+use std::rc::Rc;
+
 #[derive(Debug, Clone)]
 pub enum Object {
     Null,
     Integer(i64),
     Bool(bool),
-    ReturnValue(Box<Object>),
+    ReturnValue(Rc<Object>),
     Error(String),
     Function {
         parameters: Vec<Box<Node>>,
