@@ -43,6 +43,7 @@ fn test_evaluator() {
     assert_eq!(evaluate("let a = 5; a;"), Some(Object::Integer(5)));
     assert_eq!(evaluate("let a = 5 * 5; a;"), Some(Object::Integer(25)));
     assert_eq!(evaluate("let a = 5; let b = 6; a + b;"), Some(Object::Integer(11)));
+    assert_eq!(evaluate("let add = fn(a, b) { a + b; }; add(1, 2);"), Some(Object::Integer(3)));
 }
 
 fn evaluate(input: &str) -> Option<Object> {

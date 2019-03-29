@@ -1,7 +1,7 @@
 use crate::token::Token;
 use core::borrow::Borrow;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Node {
     Statement{ node: Box<Node> },
     Expression{ node: Box<Node> },

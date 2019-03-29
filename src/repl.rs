@@ -14,7 +14,7 @@ pub fn start() {
             break;
         }
 
-        let mut lexer = Lexer::new(code);
+        let lexer = Lexer::new(code);
         let mut parser = Parser::new(lexer);
 
         let program = parser.parse_program();

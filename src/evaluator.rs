@@ -21,7 +21,8 @@ pub fn eval(node: &Box<Node>, env: &mut Environment) -> Option<Object> {
         Node::ReturnStatement { token: _, return_value: return_value } => eval_return_statement(return_value, env),
         Node::LetStatement { token: _, name: name, value: value } => eval_let_statement(name, value, env),
         Node::Identifier { token: _, value: value} => eval_identifier(value, env),
-        _ => None
+        Node::FunctionLiteral { token: _, parameters: parameters, body: body } => eval_function_literal(parameters, body, env),
+        Node::CallExpression { token: _, function: function, arguments: arguments } => eval_call_expression(function, arguments, env),
     }
 }
 
@@ -184,4 +185,71 @@ fn eval_identifier(value: &String, env: &mut Environment) -> Option<Object> {
         return Some(Object::Error(format!("identifier not found: {:?}", value)));
     }
     return object;
+}
+
+
+fn eval_function_literal(parameters: &Vec<Box<Node>>, body: &Box<Node>, env: &mut Environment) -> Option<Object> {
+    Some(Object::Function {
+        parameters: parameters.clone(),
+        body: body.clone(),
+        environment: env.clone(),
+    })
+}
+
+fn eval_call_expression(function: &Box<Node>, arguments: &Vec<Box<Node>>, env: &mut Environment) -> Option<Object> {
+    let function = eval(function, env)?;
+    if function.is_error() {
+        return Some(function);
+    }
+
+    let arguments = eval_expression(arguments, env)?;
+    if arguments.len() == 1 {
+        if let Object::Error(e) = &arguments[0] {
+            return Some(Object::Error(e.to_string()));
+        }
+    }
+
+    return apply_function(function, arguments);
+}
+
+fn eval_expression(expressions: &Vec<Box<Node>>, env: &mut Environment) -> Option<Vec<Object>> {
+    let mut results = vec![];
+
+    for expression in expressions.iter() {
+        let result = eval(expression, env)?;
+        if result.is_error() {
+            return None;
+        }
+        results.push(result);
+    }
+
+    return Some(results);
+}
+
+fn apply_function(function: Object, argument: Vec<Object>) -> Option<Object> {
+    if let Object::Function { parameters: p, body: b, environment: e} = function {
+        let mut extended_env = Environment::new_enclosed(e);
+        for (i, v) in p.iter().enumerate() {
+            let v = v.borrow();
+            if let Node::Identifier { token: _, value: key } = v {
+                let a = argument.get(i);
+                if a.is_some() {
+                    let a = a.unwrap();
+                    extended_env.set(key.to_owned(), a.to_owned());
+                }
+            }
+        }
+
+        println!("[apply_function] extended_env is {:?}", extended_env);
+        println!("[apply_function] body is {:?}", b);
+
+        let result = eval(&b, &mut extended_env);
+
+        if let Some(Object::ReturnValue(v)) = result {
+            return Some(*v);
+        }
+        return result;
+    }
+
+    return None;
 }
