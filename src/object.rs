@@ -3,6 +3,7 @@ pub enum Object {
     Null,
     Integer(i64),
     Bool(bool),
+    ReturnValue(Box<Object>),
 }
 
 impl Object {

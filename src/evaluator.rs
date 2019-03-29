@@ -7,7 +7,7 @@ pub fn eval(node: &Box<Node>) -> Option<Object> {
     let n = node.borrow();
     println!("NODE: {:?}", n);
     match n {
-        Node::Program {statements: statements} => eval_statements(statements),
+        Node::Program {statements: statements} => eval_program(statements),
         Node::Statement {node: node} => eval(node),
         Node::Expression {node: node} => eval(node),
         Node::ExpressionStatement {token: _, expression: expression} => eval(expression),
@@ -15,17 +15,38 @@ pub fn eval(node: &Box<Node>) -> Option<Object> {
         Node::Boolean {token: _, value: value} => Some(native_bool_to_bool_object(*value)),
         Node::PrefixExpression { token: _, operator: operator, right: right} => eval_prefix_expression(operator, right),
         Node::InfixExpression { token: _, left: left, operator: operator, right: right} => eval_infix_expression(left, operator, right),
-        Node::BlockStatement {token: _, statements: statements} => eval_statements(statements),
+        Node::BlockStatement {token: _, statements: statements} => eval_block_statements(statements),
         Node::IfExpression { token: _, condition: condition, consequence: consequence, alternative: alternative} => eval_if_expression(condition, consequence, alternative),
+        Node::ReturnStatement { token: _, return_value: return_value } => eval_return_statement(return_value),
         _ => None
     }
 }
 
-fn eval_statements(nodes: &Vec<Box<Node>>) -> Option<Object> {
+fn eval_program(nodes: &Vec<Box<Node>>) -> Option<Object> {
     let mut result = None;
 
     for node in nodes.iter() {
-        result = eval(node);
+        let r = eval(node)?;
+        if let Object::ReturnValue(v) = r {
+            return Some(*v);
+        }
+        result = Some(r);
+    }
+
+    return result;
+}
+
+fn eval_block_statements(nodes: &Vec<Box<Node>>) -> Option<Object> {
+    let mut result = None;
+
+    for node in nodes.iter() {
+        let r = eval(node)?;
+
+        if r.is_same(&Object::ReturnValue(Box::new(Object::Null))) {
+            return Some(r);
+        }
+
+        result = Some(r);
     }
 
     return result;
@@ -112,4 +133,9 @@ fn is_truthy(object: Object) -> bool {
         Object::Bool(false) => false,
         _ => true,
     }
+}
+
+fn eval_return_statement(return_value: &Box<Node>) -> Option<Object> {
+    let val = eval(return_value)?;
+    return Some(Object::ReturnValue(Box::new(val)));
 }
