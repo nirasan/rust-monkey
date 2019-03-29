@@ -26,6 +26,11 @@ fn test_evaluator() {
     assert_eq!(evaluate("1 > 2"), Some(Object::Bool(false)));
     assert_eq!(evaluate("1 == 2"), Some(Object::Bool(false)));
     assert_eq!(evaluate("1 != 2"), Some(Object::Bool(true)));
+    assert_eq!(evaluate("true == true"), Some(Object::Bool(true)));
+    assert_eq!(evaluate("false == false"), Some(Object::Bool(true)));
+    assert_eq!(evaluate("true != true"), Some(Object::Bool(false)));
+    assert_eq!(evaluate("false != false"), Some(Object::Bool(false)));
+    assert_eq!(evaluate("(1 < 2) == true"), Some(Object::Bool(true)));
 }
 
 fn evaluate(input: &str) -> Option<Object> {

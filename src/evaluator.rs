@@ -61,13 +61,20 @@ fn eval_minus_prefix_operator_expression(right: Object) -> Object {
 fn eval_infix_expression(left: &Box<Node>, operator: &str, right: &Box<Node>) -> Option<Object> {
     let left = eval(left)?;
     let right = eval(right)?;
-    match left {
-        Object::Integer(n) => match right {
-            Object::Integer(m) => Some(eval_integer_infix_expression(operator, n, m)),
-            _ => Some(Object::Null)
+
+    if left.is_integer() && right.is_integer() {
+        if let Object::Integer(n) = left {
+            if let Object::Integer(m) = right {
+                return Some(eval_integer_infix_expression(operator, n, m));
+            }
         }
-        _ => Some(Object::Null)
     }
+
+    Some(match operator {
+        "==" => native_bool_to_bool_object(left == right),
+        "!=" => native_bool_to_bool_object(left != right),
+        _ => Object::Null
+    })
 }
 
 fn eval_integer_infix_expression(op: &str, left: i64, right: i64) -> Object {
