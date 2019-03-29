@@ -15,6 +15,8 @@ pub fn eval(node: &Box<Node>) -> Option<Object> {
         Node::Boolean {token: _, value: value} => Some(native_bool_to_bool_object(*value)),
         Node::PrefixExpression { token: _, operator: operator, right: right} => eval_prefix_expression(operator, right),
         Node::InfixExpression { token: _, left: left, operator: operator, right: right} => eval_infix_expression(left, operator, right),
+        Node::BlockStatement {token: _, statements: statements} => eval_statements(statements),
+        Node::IfExpression { token: _, condition: condition, consequence: consequence, alternative: alternative} => eval_if_expression(condition, consequence, alternative),
         _ => None
     }
 }
@@ -88,5 +90,26 @@ fn eval_integer_infix_expression(op: &str, left: i64, right: i64) -> Object {
         "==" => native_bool_to_bool_object(left == right),
         "!=" => native_bool_to_bool_object(left != right),
         _ => Object::Null
+    }
+}
+
+fn eval_if_expression(condition: &Box<Node>, consequence: &Box<Node>, alternative: &Option<Box<Node>>) -> Option<Object> {
+    let condition = eval(condition)?;
+    if is_truthy(condition) {
+        return eval(consequence);
+    } else if alternative.is_some() {
+        let alternative = alternative.as_ref().unwrap();
+        return eval(alternative);
+    } else {
+        return Some(Object::Null);
+    }
+}
+
+fn is_truthy(object: Object) -> bool {
+    match object {
+        Object::Null => false,
+        Object::Bool(true) => true,
+        Object::Bool(false) => false,
+        _ => true,
     }
 }
