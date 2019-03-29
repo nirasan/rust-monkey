@@ -8,6 +8,8 @@ use rust_monkey::evaluator::eval;
 #[test]
 fn test_evaluator() {
     assert_eq!(evaluate("5"), Some(Object::Integer(5)));
+    assert_eq!(evaluate("true"), Some(Object::Bool(true)));
+    assert_eq!(evaluate("false"), Some(Object::Bool(false)));
 }
 
 fn evaluate(input: &str) -> Option<Object> {
