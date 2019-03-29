@@ -14,6 +14,7 @@ pub fn eval(node: &Box<Node>) -> Option<Object> {
         Node::IntegerLiteral {token: _, value: value} => Some(Object::Integer(*value)),
         Node::Boolean {token: _, value: value} => Some(native_bool_to_bool_object(*value)),
         Node::PrefixExpression { token: _, operator: operator, right: right} => eval_prefix_expression(operator, right),
+        Node::InfixExpression { token: _, left: left, operator: operator, right: right} => eval_infix_expression(left, operator, right),
         _ => None
     }
 }
@@ -54,5 +55,27 @@ fn eval_minus_prefix_operator_expression(right: Object) -> Object {
         Object::Integer(-i)
     } else {
         Object::Null
+    }
+}
+
+fn eval_infix_expression(left: &Box<Node>, operator: &str, right: &Box<Node>) -> Option<Object> {
+    let left = eval(left)?;
+    let right = eval(right)?;
+    match left {
+        Object::Integer(n) => match right {
+            Object::Integer(m) => Some(eval_integer_infix_expression(operator, n, m)),
+            _ => Some(Object::Null)
+        }
+        _ => Some(Object::Null)
+    }
+}
+
+fn eval_integer_infix_expression(op: &str, left: i64, right: i64) -> Object {
+    match op {
+        "+" => Object::Integer(left + right),
+        "-" => Object::Integer(left - right),
+        "*" => Object::Integer(left * right),
+        "/" => Object::Integer(left / right),
+        _ => Object::Null
     }
 }
