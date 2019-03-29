@@ -76,6 +76,10 @@ fn eval_integer_infix_expression(op: &str, left: i64, right: i64) -> Object {
         "-" => Object::Integer(left - right),
         "*" => Object::Integer(left * right),
         "/" => Object::Integer(left / right),
+        "<" => native_bool_to_bool_object(left < right),
+        ">" => native_bool_to_bool_object(left > right),
+        "==" => native_bool_to_bool_object(left == right),
+        "!=" => native_bool_to_bool_object(left != right),
         _ => Object::Null
     }
 }

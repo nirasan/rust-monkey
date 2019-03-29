@@ -22,6 +22,10 @@ fn test_evaluator() {
     assert_eq!(evaluate("4 / 2"), Some(Object::Integer(2)));
     assert_eq!(evaluate("20 + 2 * -10"), Some(Object::Integer(0)));
     assert_eq!(evaluate("(5 + 10 * 2 + 15 / 3) * 2 + -10"), Some(Object::Integer(50)));
+    assert_eq!(evaluate("1 < 2"), Some(Object::Bool(true)));
+    assert_eq!(evaluate("1 > 2"), Some(Object::Bool(false)));
+    assert_eq!(evaluate("1 == 2"), Some(Object::Bool(false)));
+    assert_eq!(evaluate("1 != 2"), Some(Object::Bool(true)));
 }
 
 fn evaluate(input: &str) -> Option<Object> {
