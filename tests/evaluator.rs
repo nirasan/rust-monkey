@@ -62,6 +62,7 @@ fn test_evaluator() {
     assert_eq_int(evaluate("let add = fn(a, b) { a + b; }; add(1, 2);"), 3);
 
     assert_eq_string(evaluate(r#"return "hello";"#), "hello");
+    assert_eq_string(evaluate(r#""hello" + " " + "world""#), "hello world");
 }
 
 fn evaluate(input: &str) -> Option<Rc<Object>> {

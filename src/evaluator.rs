@@ -177,6 +177,14 @@ fn eval_infix_expression(
         }
     }
 
+    if left.is_string() && right.is_string() {
+        if let Object::StringValue(l) = left.borrow() {
+            if let Object::StringValue(r) = right.borrow() {
+                return Some(eval_string_infix_expression(operator, l, r));
+            }
+        }
+    }
+
     if !left.is_same(&right) {
         return Some(Rc::new(Object::Error(format!(
             "type mismatch: {:?}, {:?}, {:?}",
@@ -209,6 +217,16 @@ fn eval_integer_infix_expression(operator: &str, left: i64, right: i64) -> Rc<Ob
             left, operator, right
         )),
     })
+}
+
+fn eval_string_infix_expression(operator: &str, left: &str, right: &str) -> Rc<Object> {
+    if operator != "+" {
+        return Rc::new(Object::Error(format!(
+            "unknown operator: {:?}, {:?}, {:?}",
+            left, operator, right
+        )));
+    }
+    return Rc::new(Object::StringValue(left.to_owned() + right));
 }
 
 fn eval_if_expression(

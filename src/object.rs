@@ -28,6 +28,13 @@ impl Object {
         self.is_same(&INTEGER)
     }
 
+    pub fn is_string(&self) -> bool {
+        match self {
+            Object::StringValue(_) => true,
+            _ => false,
+        }
+    }
+
     pub fn is_error(&self) -> bool {
         self.is_same(&Object::Error(String::new()))
     }
