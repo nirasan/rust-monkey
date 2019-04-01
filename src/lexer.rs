@@ -58,6 +58,9 @@ impl Lexer {
                 self.next();
                 Bang
             }
+        } else if c == '"' {
+            let str = self.read_string();
+            Str(str)
         } else {
             let reserved = Token::from_str(c.to_string().as_str());
             self.next();
@@ -88,6 +91,17 @@ impl Lexer {
             self.next();
         }
         return String::from_iter(&self.input[start..self.position]);
+    }
+
+    fn read_string(&mut self) -> String {
+        self.next();
+        let start = self.position;
+        while self.char.is_some() && self.char.unwrap() != '"' {
+            self.next();
+        }
+        let end = self.position;
+        self.next();
+        return String::from_iter(&self.input[start..end]);
     }
 
     fn is_letter(c: char) -> bool {
@@ -210,4 +224,19 @@ fn test_read_identifier() {
     assert_eq!(lexer.read_identifier(), "let".to_string());
     lexer.next();
     assert_eq!(lexer.read_identifier(), "five".to_string());
+}
+
+
+#[test]
+fn test_read_string() {
+    let input = r#"let s = "hello"; 10"#.to_string();
+    let mut lexer = Lexer::new(input);
+
+    assert_eq!(lexer.token(), Let);
+    assert_eq!(lexer.token(), Ident("s".to_string()));
+    assert_eq!(lexer.token(), Assign);
+    assert_eq!(lexer.token(), Str("hello".to_string()));
+
+    assert_eq!(lexer.token(), SemiColon);
+    assert_eq!(lexer.token(), Int("10".to_string()));
 }

@@ -23,6 +23,7 @@ fn test_parser() {
     parse("add(5, 6)");
     parse("let add = fn(a, b){ a + b; }; add(1, 2);");
     parse("fn(x, y) { x + y; }");
+    parse(r#"let s = "hello";"#);
 }
 
 fn parse(input: &str) {

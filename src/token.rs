@@ -37,6 +37,8 @@ pub enum Token {
     If,
     Else,
     Return,
+
+    Str(String),
 }
 
 impl FromStr for Token {
@@ -75,8 +77,9 @@ impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Token::Illegal(s) => write!(f, "Illegal({})", s),
-            Token::Ident(s) => write!(f, "\"{}\"", s),
+            Token::Ident(s) => write!(f, "{}", s),
             Token::Int(s) => write!(f, "{}", s),
+            Token::Str(s) => write!(f, "{}", s),
             Token::Eof => write!(f, "EOF"),
             Token::Assign => write!(f, "="),
             Token::Plus => write!(f, "+"),

@@ -42,6 +42,10 @@ pub enum Node {
         token: Token,
         value: i64,
     },
+    StringLiteral {
+        token: Token,
+        value: String,
+    },
     PrefixExpression {
         token: Token,
         operator: String,
@@ -111,6 +115,7 @@ impl Node {
         let node = match node.borrow() {
             &Node::Identifier { token: _, value: _ } => Some(node),
             &Node::IntegerLiteral { token: _, value: _ } => Some(node),
+            &Node::StringLiteral { token: _, value: _ } => Some(node),
             &Node::PrefixExpression {
                 token: _,
                 operator: _,
@@ -204,6 +209,10 @@ impl Node {
 
     pub fn new_integer_literal(token: Token, value: i64) -> Box<Node> {
         Box::new(Node::IntegerLiteral { token, value })
+    }
+
+    pub fn new_string_literal(token: Token, value: String) -> Box<Node> {
+        Box::new(Node::StringLiteral { token, value })
     }
 
     pub fn new_prefix_expression(

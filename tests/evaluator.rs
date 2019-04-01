@@ -60,6 +60,8 @@ fn test_evaluator() {
     assert_eq_int(evaluate("let a = 5 * 5; a;"), 25);
     assert_eq_int(evaluate("let a = 5; let b = 6; a + b;"), 11);
     assert_eq_int(evaluate("let add = fn(a, b) { a + b; }; add(1, 2);"), 3);
+
+    assert_eq_string(evaluate(r#"return "hello";"#), "hello");
 }
 
 fn evaluate(input: &str) -> Option<Rc<Object>> {
@@ -88,4 +90,8 @@ fn assert_eq_bool(result: Option<Rc<Object>>, b: bool) {
 
 fn assert_eq_error(result: Option<Rc<Object>>, s: &str) {
     assert_eq!(result, Some(Rc::new(Object::Error(s.to_string()))));
+}
+
+fn assert_eq_string(result: Option<Rc<Object>>, s: &str) {
+    assert_eq!(result, Some(Rc::new(Object::StringValue(s.to_owned()))));
 }

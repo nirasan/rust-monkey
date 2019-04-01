@@ -8,6 +8,7 @@ pub enum Object {
     Null,
     Integer(i64),
     Bool(bool),
+    StringValue(String),
     ReturnValue(Rc<Object>),
     Error(String),
     Function {
@@ -38,6 +39,10 @@ impl PartialEq for Object {
             Object::Null => self.is_same(other),
             Object::Integer(l) => match other {
                 Object::Integer(r) => l == r,
+                _ => false,
+            },
+            Object::StringValue(l) => match other {
+                Object::StringValue(r) => l == r,
                 _ => false,
             },
             Object::Bool(l) => match other {

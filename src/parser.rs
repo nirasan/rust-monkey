@@ -32,6 +32,7 @@ impl Parser {
 
         parser.register_prefix_parse_fn(Token::Ident(String::new()), Parser::parse_identifier);
         parser.register_prefix_parse_fn(Token::Int(String::new()), Parser::parse_integer_literal);
+        parser.register_prefix_parse_fn(Token::Str(String::new()), Parser::parse_string_literal);
         parser.register_prefix_parse_fn(Token::Bang, Parser::parse_prefix_expression);
         parser.register_prefix_parse_fn(Token::Minus, Parser::parse_prefix_expression);
         parser.register_prefix_parse_fn(Token::True, Parser::parse_boolean);
@@ -216,6 +217,13 @@ impl Parser {
         }
 
         return Some(ast::Node::new_integer_literal(token, value.unwrap()));
+    }
+
+    pub(self) fn parse_string_literal(&mut self) -> Option<Box<ast::Node>> {
+        Some(ast::Node::new_string_literal(
+            self.cur_token.clone(),
+            self.cur_token.to_string(),
+        ))
     }
 
     pub(self) fn parse_boolean(&mut self) -> Option<Box<ast::Node>> {

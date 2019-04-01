@@ -7,7 +7,6 @@ use std::rc::Rc;
 
 pub fn eval(node: &Box<Node>, env: &mut Environment) -> Option<Rc<Object>> {
     let n = node.borrow();
-    println!("NODE: {:?}", n);
     match n {
         Node::Program {
             statements: statements,
@@ -22,6 +21,10 @@ pub fn eval(node: &Box<Node>, env: &mut Environment) -> Option<Rc<Object>> {
             token: _,
             value: value,
         } => Some(Rc::new(Object::Integer(*value))),
+        Node::StringLiteral {
+            token: _,
+            value: value,
+        } => Some(Rc::new(Object::StringValue(value.to_owned()))),
         Node::Boolean {
             token: _,
             value: value,
