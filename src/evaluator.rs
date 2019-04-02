@@ -289,12 +289,18 @@ fn eval_let_statement(
 }
 
 fn eval_identifier(value: &String, env: &mut Environment) -> Option<Rc<Object>> {
-    let object = env.get(value);
+    let mut object = env.get(value);
+
     if object.is_none() {
-        return Some(Rc::new(Object::Error(format!(
-            "identifier not found: {:?}",
-            value
-        ))));
+
+        object = find_builtin(value);
+
+        if object.is_none() {
+            return Some(Rc::new(Object::Error(format!(
+                "identifier not found: {:?}",
+                value
+            ))));
+        }
     }
     return object;
 }
@@ -317,6 +323,7 @@ fn eval_call_expression(
     env: &mut Environment,
 ) -> Option<Rc<Object>> {
     let function = eval(function, env)?;
+
     if function.is_error() {
         return Some(function);
     }
@@ -346,6 +353,10 @@ fn eval_expression(expressions: &Vec<Box<Node>>, env: &mut Environment) -> Optio
 }
 
 fn apply_function(function: Rc<Object>, argument: Vec<Rc<Object>>) -> Option<Rc<Object>> {
+    if let Object::Builtin(name) = function.borrow() {
+        return do_builtin(name, argument);
+    }
+
     if let Object::Function {
         parameters: p,
         body: b,
@@ -383,4 +394,32 @@ fn apply_function(function: Rc<Object>, argument: Vec<Rc<Object>>) -> Option<Rc<
     }
 
     return None;
+}
+
+fn find_builtin(s: &str) -> Option<Rc<Object>> {
+    match s {
+        "len" => Some(Rc::new(Object::Builtin("len".to_owned()))),
+        _ => None,
+    }
+}
+
+fn do_builtin(s: &str, args: Vec<Rc<Object>>) -> Option<Rc<Object>> {
+    match s {
+        "len" => builtin_len(args),
+        _ => None,
+    }
+}
+
+fn builtin_len(args: Vec<Rc<Object>>) -> Option<Rc<Object>> {
+    if args.len() != 1 {
+        return Some(Rc::new(Object::Error(format!("wrong number of arguments, got = {}, want = 1", args.len()))));
+    }
+
+    let o = args.get(0).unwrap();
+
+    if let Object::StringValue(v) = o.borrow() {
+        return Some(Rc::new(Object::Integer(v.len() as i64)));
+    } else {
+        return Some(Rc::new(Object::Error("argument to len not supported".to_owned())));
+    }
 }

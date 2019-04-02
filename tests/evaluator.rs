@@ -63,6 +63,8 @@ fn test_evaluator() {
 
     assert_eq_string(evaluate(r#"return "hello";"#), "hello");
     assert_eq_string(evaluate(r#""hello" + " " + "world""#), "hello world");
+
+    assert_eq_int(evaluate(r#"len("hello")"#), 5);
 }
 
 fn evaluate(input: &str) -> Option<Rc<Object>> {

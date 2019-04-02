@@ -16,6 +16,7 @@ pub enum Object {
         body: Box<Node>,
         environment: Environment,
     },
+    Builtin(String),
 }
 
 impl Object {
