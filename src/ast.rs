@@ -46,6 +46,10 @@ pub enum Node {
         token: Token,
         value: String,
     },
+    ArrayLiteral {
+        token: Token,
+        elements: Vec<Box<Node>>,
+    },
     PrefixExpression {
         token: Token,
         operator: String,
@@ -76,6 +80,11 @@ pub enum Node {
         token: Token,
         function: Box<Node>,
         arguments: Vec<Box<Node>>,
+    },
+    IndexExpression {
+        token: Token,
+        left: Box<Node>,
+        index: Box<Node>,
     },
 }
 
@@ -116,6 +125,7 @@ impl Node {
             &Node::Identifier { token: _, value: _ } => Some(node),
             &Node::IntegerLiteral { token: _, value: _ } => Some(node),
             &Node::StringLiteral { token: _, value: _ } => Some(node),
+            &Node::ArrayLiteral { token: _, elements: _ } => Some(node),
             &Node::PrefixExpression {
                 token: _,
                 operator: _,
@@ -143,6 +153,11 @@ impl Node {
                 token: _,
                 function: _,
                 arguments: _,
+            } => Some(node),
+            &Node::IndexExpression {
+                token: _,
+                left: _,
+                index: _,
             } => Some(node),
             &Node::Expression { node: _ } => Some(node),
             _ => None,
@@ -213,6 +228,22 @@ impl Node {
 
     pub fn new_string_literal(token: Token, value: String) -> Box<Node> {
         Box::new(Node::StringLiteral { token, value })
+    }
+
+    pub fn new_array_literal(
+        token: Token,
+        elements: Vec<Box<Node>>,
+    ) -> Option<Box<Node>> {
+        for e in elements.iter() {
+            if !Node::is_expression(e.borrow()) {
+                return None;
+            }
+        }
+
+        Some(Box::new(Node::ArrayLiteral {
+            token,
+            elements
+        }))
     }
 
     pub fn new_prefix_expression(
@@ -328,6 +359,26 @@ impl Node {
             token,
             function,
             arguments,
+        }))
+    }
+
+    pub fn new_index_expression(
+        token: Token,
+        left: Box<Node>,
+        index: Box<Node>,
+    ) -> Option<Box<Node>> {
+        if !Node::is_expression(left.borrow()) {
+            return None;
+        }
+
+        if !Node::is_expression(index.borrow()) {
+            return None;
+        }
+
+        Some(Box::new(Node::IndexExpression {
+            token,
+            left,
+            index,
         }))
     }
 

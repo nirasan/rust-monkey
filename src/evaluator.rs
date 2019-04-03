@@ -73,6 +73,7 @@ pub fn eval(node: &Box<Node>, env: &mut Environment) -> Option<Rc<Object>> {
             function: function,
             arguments: arguments,
         } => eval_call_expression(function, arguments, env),
+        _=>None,
     }
 }
 

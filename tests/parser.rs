@@ -20,10 +20,13 @@ fn test_parser() {
     parse("if (1 < 2) { x }");
     parse("if (1 < 2) { true } else { false }");
     parse("fn(x, y) { x + y; }(5, 6)");
-    parse("add(5, 6)");
     parse("let add = fn(a, b){ a + b; }; add(1, 2);");
-    parse("fn(x, y) { x + y; }");
     parse(r#"let s = "hello";"#);
+    parse("fn(x, y) { x + y; }");
+    parse("add(5, 6)");
+    parse(r#"[1, 2 , "hello", true]"#);
+    parse(r#"a[0]"#);
+    parse(r#"[1, 2, 3][0]"#);
 }
 
 fn parse(input: &str) {

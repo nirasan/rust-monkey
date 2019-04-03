@@ -40,6 +40,7 @@ impl Parser {
         parser.register_prefix_parse_fn(Token::LParen, Parser::parse_grouped_expression);
         parser.register_prefix_parse_fn(Token::If, Parser::parse_if_expression);
         parser.register_prefix_parse_fn(Token::Function, Parser::parse_function_literal);
+        parser.register_prefix_parse_fn(Token::LBracket, Parser::parse_array_literal);
 
         parser.register_infix_parse_fn(Token::Plus, Parser::parse_infix_expression);
         parser.register_infix_parse_fn(Token::Minus, Parser::parse_infix_expression);
@@ -50,6 +51,7 @@ impl Parser {
         parser.register_infix_parse_fn(Token::LT, Parser::parse_infix_expression);
         parser.register_infix_parse_fn(Token::GT, Parser::parse_infix_expression);
         parser.register_infix_parse_fn(Token::LParen, Parser::parse_call_expression);
+        parser.register_infix_parse_fn(Token::LBracket, Parser::parse_index_expression);
 
         return parser;
     }
@@ -224,6 +226,17 @@ impl Parser {
             self.cur_token.clone(),
             self.cur_token.to_string(),
         ))
+    }
+
+    pub(self) fn parse_array_literal(&mut self) -> Option<Box<ast::Node>> {
+        let token = self.cur_token.clone();
+
+        let elements = self.parse_expression_list(Token::RBracket)?;
+
+        ast::Node::new_array_literal(
+            token,
+            elements,
+        )
     }
 
     pub(self) fn parse_boolean(&mut self) -> Option<Box<ast::Node>> {
@@ -402,19 +415,19 @@ impl Parser {
         function: Box<ast::Node>,
     ) -> Option<Box<ast::Node>> {
         let token = self.cur_token.clone();
-        let arguments = self.parse_call_arguments();
+        let arguments = self.parse_expression_list(Token::RParen);
         if arguments.is_none() {
             return None;
         }
         return ast::Node::new_call_expression(token, function, arguments.unwrap());
     }
 
-    pub(self) fn parse_call_arguments(&mut self) -> Option<Vec<Box<ast::Node>>> {
-        let mut arguments = vec![];
+    pub(self) fn parse_expression_list(&mut self, end: Token) -> Option<Vec<Box<ast::Node>>> {
+        let mut list = vec![];
 
-        if self.peek_token_is(Token::RParen) {
+        if self.peek_token_is(end.clone()) {
             self.next_token();
-            return Some(arguments);
+            return Some(list);
         }
 
         self.next_token();
@@ -423,7 +436,7 @@ impl Parser {
         if expression.is_none() {
             return None;
         }
-        arguments.push(expression.unwrap());
+        list.push(expression.unwrap());
 
         while self.peek_token_is(Token::Comma) {
             self.next_token();
@@ -433,14 +446,30 @@ impl Parser {
             if expression.is_none() {
                 return None;
             }
-            arguments.push(expression.unwrap());
+            list.push(expression.unwrap());
         }
 
-        if !self.expect_peek(Token::RParen) {
+        if !self.expect_peek(end) {
             return None;
         }
 
-        return Some(arguments);
+        return Some(list);
+    }
+
+    pub(self) fn parse_index_expression(
+        &mut self,
+        left: Box<ast::Node>,
+    ) -> Option<Box<ast::Node>> {
+        let token = self.cur_token.clone();
+
+        self.next_token();
+        let index = self.parse_expression(Precedence::LOWEST)?;
+
+        if !self.expect_peek(Token::RBracket) {
+            return None;
+        }
+
+        return ast::Node::new_index_expression(token, left, index);
     }
 
     fn peek_precedence(&self) -> Precedence {
@@ -462,6 +491,7 @@ impl Parser {
             Token::Slash => Precedence::PRODUCT,
             Token::Asterisk => Precedence::PRODUCT,
             Token::LParen => Precedence::CALL,
+            Token::LBracket => Precedence::INDEX,
             _ => Precedence::LOWEST,
         }
     }
@@ -502,6 +532,7 @@ enum Precedence {
     PRODUCT,
     PREFIX,
     CALL,
+    INDEX,
 }
 
 #[test]
