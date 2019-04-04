@@ -68,6 +68,12 @@ fn test_evaluator() {
 
     assert_eq_int(evaluate("[1, 2, 3][0]"), 1);
     assert_eq_bool(evaluate("[1, true, 3][1]"), true);
+
+    assert_eq_int(evaluate("first([1, 2, 3])"), 1);
+    assert_eq_int(evaluate("last([1, 2, 3])"), 3);
+    assert_eq_int(evaluate("first(rest([1, 2, 3]))"), 2);
+
+    assert_eq_int(evaluate("let a = [1, 2, 3]; let b = push(a, 4); last(b)"), 4);
 }
 
 fn evaluate(input: &str) -> Option<Rc<Object>> {

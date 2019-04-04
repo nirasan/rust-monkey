@@ -447,7 +447,7 @@ fn eval_index_expression(
 
 fn find_builtin(s: &str) -> Option<Rc<Object>> {
     match s {
-        "len" => Some(Rc::new(Object::Builtin("len".to_owned()))),
+        "len" | "first" | "last" | "rest" | "push" => Some(Rc::new(Object::Builtin(s.to_owned()))),
         _ => None,
     }
 }
@@ -455,6 +455,10 @@ fn find_builtin(s: &str) -> Option<Rc<Object>> {
 fn do_builtin(s: &str, args: Vec<Rc<Object>>) -> Option<Rc<Object>> {
     match s {
         "len" => builtin_len(args),
+        "first" => builtin_first(args),
+        "last" => builtin_last(args),
+        "rest" => builtin_rest(args),
+        "push" => builtin_push(args),
         _ => None,
     }
 }
@@ -466,9 +470,66 @@ fn builtin_len(args: Vec<Rc<Object>>) -> Option<Rc<Object>> {
 
     let o = args.get(0).unwrap();
 
-    if let Object::StringValue(v) = o.borrow() {
-        return Some(Rc::new(Object::Integer(v.len() as i64)));
+    match o.borrow() {
+        Object::StringValue(v) => Some(Rc::new(Object::Integer(v.len() as i64))),
+        Object::Array(v) => Some(Rc::new(Object::Integer(v.len() as i64))),
+        _ => Some(Rc::new(Object::Error("argument to len not supported".to_owned())))
+    }
+}
+
+fn builtin_first(args: Vec<Rc<Object>>) -> Option<Rc<Object>> {
+    if args.len() != 1 {
+        return Some(Rc::new(Object::Error(format!("wrong number of arguments, got = {}, want = 1", args.len()))));
+    }
+
+    let o = args.get(0).unwrap();
+    if let Object::Array(elements) = o.borrow() {
+        return Some(elements[0].clone());
     } else {
-        return Some(Rc::new(Object::Error("argument to len not supported".to_owned())));
+        return Some(Rc::new(Object::Error(format!("argument to first must be Array, got = {:?}", o))));
+    }
+}
+
+
+fn builtin_last(args: Vec<Rc<Object>>) -> Option<Rc<Object>> {
+    if args.len() != 1 {
+        return Some(Rc::new(Object::Error(format!("wrong number of arguments, got = {}, want = 1", args.len()))));
+    }
+
+    let o = args.get(0).unwrap();
+    if let Object::Array(elements) = o.borrow() {
+        return Some(elements[elements.len()-1].clone());
+    } else {
+        return Some(Rc::new(Object::Error(format!("argument to first must be Array, got = {:?}", o))));
+    }
+}
+
+fn builtin_rest(args: Vec<Rc<Object>>) -> Option<Rc<Object>> {
+    if args.len() != 1 {
+        return Some(Rc::new(Object::Error(format!("wrong number of arguments, got = {}, want = 1", args.len()))));
+    }
+
+    let o = args.get(0).unwrap();
+    if let Object::Array(elements) = o.borrow() {
+        return Some(Rc::new(Object::Array(elements[1..].to_owned())));
+    } else {
+        return Some(Rc::new(Object::Error(format!("argument to first must be Array, got = {:?}", o))));
+    }
+}
+
+fn builtin_push(args: Vec<Rc<Object>>) -> Option<Rc<Object>> {
+    if args.len() != 2 {
+        return Some(Rc::new(Object::Error(format!("wrong number of arguments, got = {}, want = 2", args.len()))));
+    }
+
+    let arr = args.get(0).unwrap();
+    let elm = args.get(1).unwrap();
+
+    if let Object::Array(elements) = arr.borrow() {
+        let mut elements = elements.to_owned();
+        elements.push(elm.to_owned());
+        return Some(Rc::new(Object::Array(elements)));
+    } else {
+        return Some(Rc::new(Object::Error(format!("argument to first must be Array, got = {:?}", arr))));
     }
 }
