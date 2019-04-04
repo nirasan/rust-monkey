@@ -65,6 +65,9 @@ fn test_evaluator() {
     assert_eq_string(evaluate(r#""hello" + " " + "world""#), "hello world");
 
     assert_eq_int(evaluate(r#"len("hello")"#), 5);
+
+    assert_eq_int(evaluate("[1, 2, 3][0]"), 1);
+    assert_eq_bool(evaluate("[1, true, 3][1]"), true);
 }
 
 fn evaluate(input: &str) -> Option<Rc<Object>> {

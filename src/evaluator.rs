@@ -73,7 +73,15 @@ pub fn eval(node: &Box<Node>, env: &mut Environment) -> Option<Rc<Object>> {
             function: function,
             arguments: arguments,
         } => eval_call_expression(function, arguments, env),
-        _=>None,
+        Node::ArrayLiteral {
+            token: _,
+            elements,
+        } => eval_array_literal(elements, env),
+        Node::IndexExpression {
+            token,
+            left,
+            index,
+        } => eval_index_expression(left, index, env),
     }
 }
 
@@ -395,6 +403,46 @@ fn apply_function(function: Rc<Object>, argument: Vec<Rc<Object>>) -> Option<Rc<
     }
 
     return None;
+}
+
+fn eval_array_literal(elements: &Vec<Box<Node>>, env: &mut Environment) -> Option<Rc<Object>> {
+    let elements = eval_expression(elements, env)?;
+    if elements.len() == 1 && elements[0].is_error() {
+        return Some(elements[0].clone());
+    }
+    return Some(Rc::new(Object::Array(elements)));
+}
+
+fn eval_index_expression(
+    left: &Box<Node>,
+    index: &Box<Node>,
+    env: &mut Environment,
+) -> Option<Rc<Object>> {
+    let left = eval(left, env)?;
+    if left.is_error() {
+        return Some(left);
+    }
+    let index = eval(index, env)?;
+    if index.is_error() {
+        return Some(index);
+    }
+    if let Object::Array(elements) = left.borrow() {
+        if let Object::Integer(i) = index.borrow() {
+            let max = elements.len() - 1;
+            let i = *i as usize;
+            if i < 0 || max < i {
+                return Some(Rc::new(Object::Error(format!(
+                    "invalid index: {}",
+                    i
+                ))));
+            }
+            return Some(elements[i].clone());
+        }
+    }
+    return Some(Rc::new(Object::Error(format!(
+        "index operator not supported: {:?}",
+        left
+    ))));
 }
 
 fn find_builtin(s: &str) -> Option<Rc<Object>> {

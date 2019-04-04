@@ -17,6 +17,7 @@ pub enum Object {
         environment: Environment,
     },
     Builtin(String),
+    Array(Vec<Rc<Object>>),
 }
 
 impl Object {
