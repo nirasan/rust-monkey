@@ -41,6 +41,7 @@ impl Parser {
         parser.register_prefix_parse_fn(Token::If, Parser::parse_if_expression);
         parser.register_prefix_parse_fn(Token::Function, Parser::parse_function_literal);
         parser.register_prefix_parse_fn(Token::LBracket, Parser::parse_array_literal);
+        parser.register_prefix_parse_fn(Token::LBrace, Parser::parse_hash_literal);
 
         parser.register_infix_parse_fn(Token::Plus, Parser::parse_infix_expression);
         parser.register_infix_parse_fn(Token::Minus, Parser::parse_infix_expression);
@@ -237,6 +238,44 @@ impl Parser {
             token,
             elements,
         )
+    }
+
+    pub(self) fn parse_hash_literal(&mut self) -> Option<Box<ast::Node>> {
+        let token = self.cur_token.clone();
+        println!("[parse_hash_literal] start token {:?}", token);
+
+        let mut elements = vec![];
+
+        while !self.peek_token_is(Token::RBrace) {
+            self.next_token();
+
+            let expression = self.parse_expression(Precedence::LOWEST);
+            let key = expression.and_then(|e| ast::Node::new_expression(e))?;
+
+            if !self.expect_peek(Token::Colon) {
+                return None;
+            }
+
+            self.next_token();
+
+            let expression = self.parse_expression(Precedence::LOWEST);
+            let val = expression.and_then(|e| ast::Node::new_expression(e))?;
+
+            elements.push(key);
+            elements.push(val);
+
+            if !self.peek_token_is(Token::RBrace) && !self.expect_peek(Token::Comma) {
+                return None;
+            }
+        }
+
+        if !self.expect_peek(Token::RBrace) {
+            return None;
+        }
+
+        return ast::Node::new_hash_literal(
+            token, elements
+        );
     }
 
     pub(self) fn parse_boolean(&mut self) -> Option<Box<ast::Node>> {

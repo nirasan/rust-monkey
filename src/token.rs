@@ -20,6 +20,7 @@ pub enum Token {
     GT,
 
     Comma,
+    Colon,
     SemiColon,
 
     LParen,
@@ -57,6 +58,7 @@ impl FromStr for Token {
             ">" => Ok(Token::GT),
             "," => Ok(Token::Comma),
             ";" => Ok(Token::SemiColon),
+            ":" => Ok(Token::Colon),
             "(" => Ok(Token::LParen),
             ")" => Ok(Token::RParen),
             "{" => Ok(Token::LBrace),
@@ -95,6 +97,7 @@ impl fmt::Display for Token {
             Token::GT => write!(f, ">"),
             Token::Comma => write!(f, ","),
             Token::SemiColon => write!(f, ";"),
+            Token::Colon => write!(f, ":"),
             Token::LParen => write!(f, "("),
             Token::RParen => write!(f, ")"),
             Token::LBrace => write!(f, "{{"),

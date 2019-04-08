@@ -50,6 +50,10 @@ pub enum Node {
         token: Token,
         elements: Vec<Box<Node>>,
     },
+    HashLiteral {
+        token: Token,
+        elements: Vec<Box<Node>>,
+    },
     PrefixExpression {
         token: Token,
         operator: String,
@@ -126,6 +130,7 @@ impl Node {
             &Node::IntegerLiteral { token: _, value: _ } => Some(node),
             &Node::StringLiteral { token: _, value: _ } => Some(node),
             &Node::ArrayLiteral { token: _, elements: _ } => Some(node),
+            &Node::HashLiteral { token: _, elements: _ } => Some(node),
             &Node::PrefixExpression {
                 token: _,
                 operator: _,
@@ -241,6 +246,22 @@ impl Node {
         }
 
         Some(Box::new(Node::ArrayLiteral {
+            token,
+            elements
+        }))
+    }
+
+    pub fn new_hash_literal(
+        token: Token,
+        elements: Vec<Box<Node>>,
+    ) -> Option<Box<Node>> {
+        for e in elements.iter() {
+            if !Node::is_expression(e.borrow()) {
+                return None;
+            }
+        }
+
+        Some(Box::new(Node::HashLiteral {
             token,
             elements
         }))

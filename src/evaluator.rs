@@ -82,6 +82,7 @@ pub fn eval(node: &Box<Node>, env: &mut Environment) -> Option<Rc<Object>> {
             left,
             index,
         } => eval_index_expression(left, index, env),
+        _ => None,
     }
 }
 

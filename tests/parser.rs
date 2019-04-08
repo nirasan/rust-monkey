@@ -27,6 +27,7 @@ fn test_parser() {
     parse(r#"[1, 2 , "hello", true]"#);
     parse(r#"a[0]"#);
     parse(r#"[1, 2, 3][0]"#);
+    parse(r#"{"one":1, true:2, 3:false}"#);
 }
 
 fn parse(input: &str) {
