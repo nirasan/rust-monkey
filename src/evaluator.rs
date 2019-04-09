@@ -1,9 +1,10 @@
 use crate::ast::Node;
 use crate::environment::Environment;
 use crate::object;
-use crate::object::Object;
+use crate::object::{Object, HashPair};
 use core::borrow::Borrow;
 use std::rc::Rc;
+use std::collections::HashMap;
 
 pub fn eval(node: &Box<Node>, env: &mut Environment) -> Option<Rc<Object>> {
     let n = node.borrow();
@@ -77,12 +78,15 @@ pub fn eval(node: &Box<Node>, env: &mut Environment) -> Option<Rc<Object>> {
             token: _,
             elements,
         } => eval_array_literal(elements, env),
+        Node::HashLiteral {
+            token: _,
+            elements,
+        } => eval_hash_literal(elements, env),
         Node::IndexExpression {
             token,
             left,
             index,
         } => eval_index_expression(left, index, env),
-        _ => None,
     }
 }
 
@@ -414,6 +418,28 @@ fn eval_array_literal(elements: &Vec<Box<Node>>, env: &mut Environment) -> Optio
     return Some(Rc::new(Object::Array(elements)));
 }
 
+fn eval_hash_literal(elements: &Vec<Box<Node>>, env: &mut Environment) -> Option<Rc<Object>> {
+    let mut hash_object_value = HashMap::<String, HashPair>::new();
+
+    let mut iter = elements.chunks(2);
+
+    for chunk in iter.next() {
+        let (key, value) = (chunk[0].clone(), chunk[1].clone());
+        let key = eval(&key, env)?;
+        if key.is_error() {
+            return Some(key);
+        }
+        let value = eval(&value, env)?;
+        if value.is_error() {
+            return Some(value);
+        }
+        let key = key.create_hash_key()?;
+        hash_object_value.insert(key.to_owned(), HashPair{ key, value });
+    }
+
+    return Some(Rc::new(Object::Hash(hash_object_value)));
+}
+
 fn eval_index_expression(
     left: &Box<Node>,
     index: &Box<Node>,
@@ -439,6 +465,15 @@ fn eval_index_expression(
             }
             return Some(elements[i].clone());
         }
+    } else if let Object::Hash(elements) = left.borrow() {
+        let key = index.create_hash_key();
+        if key.is_none() {
+            Some(Rc::new(Object::Error(format!(
+                "invalid index: {:?}", index))));
+        }
+        let key = key.unwrap();
+        let value = elements.get(&key)?;
+        return Some(value.value.clone());
     }
     return Some(Rc::new(Object::Error(format!(
         "index operator not supported: {:?}",

@@ -2,6 +2,7 @@ use crate::ast::Node;
 use crate::environment::Environment;
 
 use std::rc::Rc;
+use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 pub enum Object {
@@ -18,6 +19,13 @@ pub enum Object {
     },
     Builtin(String),
     Array(Vec<Rc<Object>>),
+    Hash(HashMap<String, HashPair>)
+}
+
+#[derive(Debug, Clone)]
+pub struct HashPair {
+    pub key: String,
+    pub value: Rc<Object>
 }
 
 impl Object {
@@ -39,6 +47,15 @@ impl Object {
 
     pub fn is_error(&self) -> bool {
         self.is_same(&Object::Error(String::new()))
+    }
+
+    pub fn create_hash_key(&self) -> Option<String> {
+        match self {
+            Object::Integer(v) => Some(format!("Integer<{}>", v)),
+            Object::Bool(v) => Some(format!("Bool<{}>", v)),
+            Object::StringValue(v) => Some(format!("StringValue<{}>", v)),
+            _ => None,
+        }
     }
 }
 
